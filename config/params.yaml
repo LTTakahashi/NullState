@@ -1,0 +1,45 @@
+# scANVI / scArches
+n_latent: 30
+# Batch key for SCVI/SCANVI integration across the two source atlases.
+# The reference combines HDBCA (10x, single-cell, neural) with Cao fetal
+# (sci-RNA-seq3, single-nucleus, non-neural anchors), so germ layer is confounded
+# with assay/suspension/atlas. 'donor_id' (54 levels, nested within atlas/assay)
+# removes nuisance technical variation without explicitly collapsing the
+# neural-vs-non-neural axis. Set to null to disable integration (NOT recommended).
+batch_key: donor_id
+# scArches surgery epochs. Set to 0 = stable pure reference projection (the original
+# validated approach). >0 enables query fine-tuning but is numerically UNSTABLE on this
+# query because HNOCA lacks true raw UMI counts (only log-norm + length-normalized),
+# so the reference ZINB likelihood is mis-specified during surgery and diverges to NaN.
+# Re-enable (e.g. 100) once true raw UMI counts are sourced for the query (Phase 1).
+scarches_max_epochs: 0
+# Drop query cells with fewer than this many counts across the reference HVGs.
+# The query expresses these HVGs sparsely (median ~190); near-empty cells cause
+# scArches encoder NaN divergence and are uninformative for label transfer.
+query_min_hvg_counts: 50
+scarches_weight_decay: 0.0
+scvi_max_epochs: 400
+scanvi_max_epochs: 200
+
+# Off-target classification thresholds (data-derived)
+tau_H_percentile: 95  # mapping entropy threshold
+tau_R_percentile: 99  # off-manifold distance threshold
+k_neighbors_offmanifold: 15
+ref_holdout_fraction: 0.10
+
+# Dish-vector test (Step 3)
+cosine_go_threshold: 0.70
+
+# Count gates (Step 4)
+count_green_total: 1000
+count_green_per_protocol: 300
+count_yellow_total: 300
+
+# Mesenchymal regex pattern for label matching
+mesenchymal_pattern: "mesench|stroma|fibro"
+
+# Rarefaction (for future N_min determination)
+rarefaction_ladder: [50, 100, 200, 500, 1000, 2000, 5000]
+
+# Dish-vector: max cells per type when computing per-type means (memory cap)
+dish_max_cells_per_type: 3000

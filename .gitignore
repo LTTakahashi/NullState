@@ -1,0 +1,55 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# ---- Virtual environments ----
+venv/
+.venv/
+ENV/
+.conda/
+
+# ---- Large data (obtain per data/README.md) ----
+data/*.h5ad
+data/*.h5
+data/*.loom
+data/*.mtx
+data/*.zarr/
+
+# ---- Model weights & training checkpoints (large) ----
+models/
+*.pt
+*.pth
+*.ckpt
+
+# ---- Pipeline run outputs ----
+results/
+*.log
+# keep the documented pilot-run logs
+!reports/pilot_artifacts/*.log
+
+# ---- LaTeX build artifacts ----
+*.aux
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+reports/*.log
+
+# ---- OS / editor / tooling ----
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+*.swp
+*~
+.vscode/
+.idea/
+.claude/

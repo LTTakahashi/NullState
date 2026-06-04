@@ -1,0 +1,41 @@
+2026-06-04 10:24:06 | INFO     | Starting NullState HNOCA Pilot
+2026-06-04 10:24:06 | INFO     | 
+2026-06-04 10:24:06 | INFO     | ############################################################
+2026-06-04 10:24:06 | INFO     | # STEP 3: Dish-Vector Test (GO/NO-GO)
+2026-06-04 10:24:06 | INFO     | ############################################################
+2026-06-04 10:32:25 | INFO     | Dish vectors: restricted query to 446959 clean_ontarget cells.
+2026-06-04 10:32:40 | INFO     | Remapped query to Ensembl IDs for dish vectors (36842 genes).
+2026-06-04 10:32:41 | INFO     | Dish vectors: subsampled to <= 3000 cells/type -> ref 21871, query 16816 cells across 8 types.
+2026-06-04 10:32:41 | INFO     | Subsetting query and ref to 28038 common genes for dish vectors...
+2026-06-04 10:32:44 | WARNING  | Reference X is raw counts; applying log1p-CP10k to match query space for dish vectors. Confirm the query uses the same normalization.
+2026-06-04 10:32:47 | INFO     | Computing dish vectors for 8 common types...
+2026-06-04 10:32:47 | WARNING  | Insufficient cells for neural crest cell (query: 2, ref: 871). Skipping.
+2026-06-04 10:32:47 | WARNING  | No genes found for set glycolysis.
+2026-06-04 10:32:47 | WARNING  | No genes found for set hypoxia.
+2026-06-04 10:32:47 | WARNING  | No genes found for set upr.
+2026-06-04 10:32:47 | WARNING  | No genes found for set emt.
+2026-06-04 10:32:47 | INFO     | ==================================================
+2026-06-04 10:32:47 | INFO     | GATE DECISION: Dish-Vector Test
+2026-06-04 10:32:47 | INFO     | RESULT: GO
+2026-06-04 10:32:47 | INFO     | --------------------
+2026-06-04 10:32:47 | INFO     | Mean Cosine: 0.9055211264226172
+2026-06-04 10:32:47 | INFO     | ==================================================
+2026-06-04 10:32:47 | INFO     | # END STEP 3
+2026-06-04 10:32:47 | INFO     | ############################################################
+
+2026-06-04 10:32:47 | INFO     | 
+2026-06-04 10:32:47 | INFO     | ############################################################
+2026-06-04 10:32:47 | INFO     | # STEP 4: Count Check (GREEN/YELLOW/RED)
+2026-06-04 10:32:47 | INFO     | ############################################################
+2026-06-04 10:37:56 | WARNING  | 'protocol' column missing. Using 'id' instead.
+2026-06-04 10:37:56 | INFO     | ==================================================
+2026-06-04 10:37:56 | INFO     | GATE DECISION: Count Check
+2026-06-04 10:37:56 | INFO     | RESULT: GREEN
+2026-06-04 10:37:56 | INFO     | --------------------
+2026-06-04 10:37:56 | INFO     | Total candidates: 7568
+2026-06-04 10:37:56 | INFO     | Protocols: 51
+2026-06-04 10:37:56 | INFO     | ==================================================
+2026-06-04 10:37:56 | INFO     | # END STEP 4
+2026-06-04 10:37:56 | INFO     | ############################################################
+
+2026-06-04 10:37:56 | INFO     | Pilot Execution Complete.

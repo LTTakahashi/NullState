@@ -1,0 +1,7 @@
+scanpy>=1.10
+cellxgene-census
+requests
+tqdm
+pyyaml
+rich
+pandas

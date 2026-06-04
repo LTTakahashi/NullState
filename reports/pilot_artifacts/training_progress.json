@@ -1,0 +1,18 @@
+{
+  "scvi": {
+    "epochs": 400,
+    "final_elbo": 552.2467041015625,
+    "elapsed_min": 125.8,
+    "model_dir": "results/pilot/reference_model/scvi_model"
+  },
+  "scanvi": {
+    "epochs": 200,
+    "final_elbo": 564.308837890625,
+    "elapsed_min": 130.0
+  },
+  "scarches": {
+    "epochs": 0,
+    "final_elbo": 0.0,
+    "elapsed_min": 0.2
+  }
+}

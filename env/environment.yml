@@ -1,0 +1,32 @@
+name: nullstate
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - scanpy>=1.10
+  - anndata>=0.10
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - seaborn
+  - scvi-tools>=1.1
+  - pytorch>=2.0
+  - leidenalg
+  - igraph
+  - louvain
+  - pyyaml
+  - rich
+  - tqdm
+  - jsonschema
+  - pytest
+  - pytest-cov
+  - requests
+  - pip
+  - pip:
+    - cellxgene-census
+    - gseapy
+    - decoupler
+    - obonet
+    - pronto

@@ -1,0 +1,8 @@
+# MSigDB Hallmark gene sets for dish-vector decomposition
+library: "MSigDB_Hallmark_2020"
+organism: "Human"
+sets:
+  glycolysis: "Glycolysis"
+  hypoxia: "Hypoxia"
+  upr: "Unfolded Protein Response"
+  emt: "Epithelial Mesenchymal Transition"  # additional for off-target analysis

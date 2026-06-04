@@ -1,0 +1,29 @@
+data_dir: data/
+results_dir: results/pilot/
+
+datasets:
+  hnoca:
+    name: "Human Neural Organoid Cell Atlas"
+    cellxgene_collection_id: "de379e5f-52d0-498c-9801-0f850823c847"
+    zenodo_url: "https://zenodo.org/records/14161275/files/hnoca_cleanedmeta.h5ad"
+    local_path: data/hnoca.h5ad
+    paper: "He, Fleck et al. Nature 2024"
+  hdbca:
+    name: "Human Developmental Brain Cell Atlas"
+    cellxgene_collection_id: "4d8fed08-2d6d-4692-b5ea-464f1d072077"
+    local_path: data/hdbca.h5ad
+    paper: "Braun et al. Science 2023"
+  cao_fetal:
+    name: "Human Fetal Cell Atlas"
+    cellxgene_collection_id: "c114c20f-1ef4-49a5-9c2e-d965787fb90c"
+    local_path: data/cao_fetal.h5ad
+    paper: "Cao et al. Science 2020"
+
+outputs:
+  reference: results/pilot/reference.h5ad
+  schemas: results/pilot/schemas/
+  model: results/pilot/reference_model/
+  classifications: results/pilot/classifications/
+  dish_vectors: results/pilot/dish_vectors/
+  gates: results/pilot/gates/
+  thresholds: results/pilot/thresholds.json
