@@ -12,7 +12,7 @@ from src.utils.logging import setup_logging, log_step_start, log_step_end, log_g
 from src.utils.origin_map import get_default_origin_map
 from src.data.build_reference import build_combined_reference, save_reference
 from src.mapping.train_scanvi import run_training_pipeline
-from src.mapping.compute_scores import calibrate_thresholds, compute_mapping_entropy, compute_offmanifold_score, annotate_query
+from src.mapping.compute_scores import calibrate_thresholds, compute_mapping_entropy, compute_offmanifold_score, annotate_query, build_empirical_label_prior
 from src.mapping.classify import classify_all
 from src.calibration.dish_vector import run_dish_vector_test
 from src.gates.count_check import run_count_check
@@ -104,18 +104,27 @@ def main():
 
         # Load data for scoring (we only need raw query to annotate and save the final results)
         query = ad.read_h5ad(query_path)
-        
+
+        # Empirical (non-uniform) label prior (Phase 1 / WS0b), off by default. Built from
+        # the reference labels and applied identically in calibration and query scoring so
+        # the calibrated tau_H stays consistent. Toggle via params.yaml: empirical_label_prior.
+        class_prior = None
+        if params.get('empirical_label_prior', False):
+            class_prior = build_empirical_label_prior(ref_model.adata.obs['cell_type'])
+            logger.info(f"Empirical label-prior correction ENABLED ({len(class_prior)} classes).")
+
         # Calibrate thresholds using the perfectly prepared reference attached to the model
         thresh = calibrate_thresholds(
-            ref_model, ref_model.adata, 
+            ref_model, ref_model.adata,
             holdout_fraction=params.get('ref_holdout_fraction', 0.1),
             tau_H_percentile=params.get('tau_H_percentile', 95),
             tau_R_percentile=params.get('tau_R_percentile', 99),
-            k=params.get('k_neighbors_offmanifold', 15)
+            k=params.get('k_neighbors_offmanifold', 15),
+            class_prior=class_prior,
         )
-        
+
         # Score using the perfectly prepared query attached to the model
-        entropy, soft = compute_mapping_entropy(query_model, query_model.adata)
+        entropy, soft = compute_mapping_entropy(query_model, query_model.adata, class_prior=class_prior)
         offmanifold = compute_offmanifold_score(ref_model, ref_model.adata, query_model, query_model.adata, k=params.get('k_neighbors_offmanifold', 15))
         
         origin_map = get_default_origin_map() # Assuming soft returns cell_type labels
@@ -128,7 +137,10 @@ def main():
         )
 
         # Classify
-        query.obs['pilot_class'] = classify_all(query, thresh['tau_H'], thresh['tau_R'])
+        query.obs['pilot_class'] = classify_all(
+            query, thresh['tau_H'], thresh['tau_R'],
+            expected_germ_layer=params.get('expected_germ_layer', 'neural'),
+        )
         
         # Save query with annotations. Drop heavy artifacts (the counts layer, embeddings)
         # so the file stays small and Steps 3/4 don't exceed the container memory limit.

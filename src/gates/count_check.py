@@ -1,10 +1,15 @@
-import pandas as pd
-import anndata as ad
-from pathlib import Path
+from __future__ import annotations
+
 import json
 import logging
-import yaml
 import re
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import pandas as pd
+
+if TYPE_CHECKING:  # anndata appears only in type hints; runtime is duck-typed on .obs,
+    import anndata as ad  # so the pure gate logic imports with just pandas installed.
 
 def count_offtarget_mesenchyme(query: ad.AnnData, class_column: str = 'pilot_class', label_column: str = 'pred_label', pattern: str = 'mesench|stroma|fibro', protocol_column: str = 'protocol') -> dict:
     """Counts true_offtarget cells matching mesenchymal pattern."""
@@ -89,6 +94,7 @@ def run_red_diagnostic(query: ad.AnnData, label_column: str = 'pred_label', clas
     }
 
 def run_count_check(query: ad.AnnData, config_path: str = 'config/params.yaml') -> dict:
+    import yaml  # lazy: keeps the module importable (pure gate logic) without pyyaml
     with open(config_path, 'r') as f:
         params = yaml.safe_load(f)
         

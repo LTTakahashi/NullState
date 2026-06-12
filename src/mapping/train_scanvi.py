@@ -133,34 +133,58 @@ def upgrade_to_scanvi(
     labels_key: str = 'cell_type',
     unlabeled_category: str = 'Unknown',
     max_epochs: int = 200,
-    checkpoint_every: int = 50
+    checkpoint_every: int = 50,
+    early_stopping: bool = True,
+    early_stopping_patience: int = 15,
 ) -> scvi.model.SCANVI:
-    """Upgrade SCVI to SCANVI with checkpointing."""
+    """Upgrade SCVI to SCANVI with checkpointing.
+
+    Phase 1 / WS0b hardening: when ``early_stopping`` is set, training stops once the
+    validation ELBO stops improving for ``early_stopping_patience`` epochs instead of
+    always running the full ``max_epochs``. The pilot showed the classifier over-trains
+    by epoch 200 (validation ELBO degraded ~15 from its minimum), which is what made
+    rare-type labels unreliable; stopping near the validation optimum fixes that.
+    ``max_epochs`` becomes the cap, not the fixed budget. This mirrors the early-stopping
+    already used in ``map_query_scarches``.
+    """
     logging.info(f"Upgrading to SCANVI using labels_key={labels_key}...")
     scanvi_model = scvi.model.SCANVI.from_scvi_model(
         scvi_model,
         labels_key=labels_key,
         unlabeled_category=unlabeled_category
     )
-    
+
     ckpt_dir = output_dir / 'scanvi_checkpoints'
     ckpt_callback = _make_checkpoint_callback(ckpt_dir, checkpoint_every)
-    
-    logging.info(f"Training SCANVI (max_epochs={max_epochs})...")
+
+    logging.info(f"Training SCANVI (max_epochs={max_epochs}, early_stopping={early_stopping}, "
+                 f"patience={early_stopping_patience})...")
     t0 = time.time()
-    scanvi_model.train(max_epochs=max_epochs, batch_size=4096, enable_checkpointing=True, callbacks=[ckpt_callback])
+    train_kwargs = dict(max_epochs=max_epochs, batch_size=4096,
+                        enable_checkpointing=True, callbacks=[ckpt_callback])
+    if early_stopping:
+        # Monitor the validation split (scvi-tools default train_size=0.9) every epoch
+        # and stop on plateau, so the classifier is taken near its validation optimum
+        # rather than the over-trained epoch-200 endpoint documented in the pilot.
+        train_kwargs.update(check_val_every_n_epoch=1, early_stopping=True,
+                            early_stopping_patience=early_stopping_patience)
+    scanvi_model.train(**train_kwargs)
     elapsed = time.time() - t0
-    
+
     history = scanvi_model.history['elbo_train']
+    n_epochs_run = len(history)
     final_elbo = history.iloc[-1].values[0]
-    logging.info(f"SCANVI training complete in {elapsed/60:.1f} min. Final ELBO: {final_elbo:.2f}")
-    
+    logging.info(f"SCANVI training complete in {elapsed/60:.1f} min "
+                 f"({n_epochs_run} epochs run). Final ELBO: {final_elbo:.2f}")
+
     _save_progress(output_dir, 'scanvi', {
-        'epochs': max_epochs,
+        'epochs': int(n_epochs_run),
+        'max_epochs': max_epochs,
+        'early_stopping': bool(early_stopping),
         'final_elbo': float(final_elbo),
         'elapsed_min': round(elapsed / 60, 1),
     })
-    
+
     return scanvi_model
 
 
@@ -345,10 +369,14 @@ def run_training_pipeline(
     progress = _check_progress(output_dir)
     
     # --- SCVI ---
-    # We must compute HVGs to get the exact 4000 genes, even if already trained.
+    # We must compute HVGs to get the exact gene panel, even if already trained, so the
+    # reference used for scoring matches the one used for training. Panel size/flavor are
+    # config-driven (params.yaml: n_hvg, hvg_flavor); defaults reproduce the pilot's 4000.
     ref = ad.read_h5ad(ref_path)
-    logging.info("Filtering for top 4000 Highly Variable Genes (HVGs)...")
-    sc.pp.highly_variable_genes(ref, n_top_genes=4000, flavor="seurat_v3", subset=True)
+    n_hvg = params.get('n_hvg', 4000)
+    hvg_flavor = params.get('hvg_flavor', 'seurat_v3')
+    logging.info(f"Filtering for top {n_hvg} Highly Variable Genes (HVGs, flavor={hvg_flavor})...")
+    sc.pp.highly_variable_genes(ref, n_top_genes=n_hvg, flavor=hvg_flavor, subset=True)
     logging.info(f"Reference shape after HVG filtering: {ref.shape}")
     
     needs_ref_training = 'scvi' not in progress or not (output_dir / 'scvi_model').exists()
@@ -379,6 +407,8 @@ def run_training_pipeline(
         ref_scanvi = upgrade_to_scanvi(
             scvi_model, output_dir,
             max_epochs=params.get('scanvi_max_epochs', 200),
+            early_stopping=params.get('scanvi_early_stopping', True),
+            early_stopping_patience=params.get('scanvi_early_stopping_patience', 15),
         )
         save_model(ref_scanvi, output_dir / "ref_scanvi")
     

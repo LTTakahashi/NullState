@@ -19,6 +19,28 @@ datasets:
     local_path: data/cao_fetal.h5ad
     paper: "Cao et al. Science 2020"
 
+  # --- Phase 2 (cross-germ-layer expansion): NOT YET SOURCED. ---
+  # Structure/placeholders only so the data contract is explicit. Fill the
+  # collection IDs / paths during WS0a sourcing. IDs are deliberately left as TODO
+  # (do not guess them -- the wrong atlas silently changes which cells enter the
+  # analysis). 'germ_layer' maps to params.expected_germ_layer for that system.
+  heoca:
+    name: "Human Endoderm Organoid Cell Atlas"
+    germ_layer: endoderm
+    cellxgene_collection_id: "b4d13dc2-9b75-401d-9d9a-6d1468c17d90"  # confirmed; ships raw+norm counts
+    local_path: data/heoca.h5ad
+    paper: "Xu et al. Nat Genet 2025 (10.1038/s41588-025-02182-6)"
+    status: phase2_id_confirmed
+  kidney_organoid:
+    name: "Kidney organoid benchmark (mesoderm)"
+    germ_layer: mesoderm
+    # No single CZI germ-layer atlas exists for kidney/mesoderm -- assemble from benchmarks.
+    # Seed: Subramanian et al. Nat Commun 2019 (450k cells, off-target-aware) via GEO / Broad SCP211.
+    cellxgene_collection_id: "TODO"        # no single collection; see docs/ws0a_data_sourcing.md
+    local_path: data/kidney_organoid.h5ad
+    paper: "Subramanian et al. Nat Commun 2019 (10.1038/s41467-019-13382-0)"
+    status: phase2_assembly_needed
+
 outputs:
   reference: results/pilot/reference.h5ad
   schemas: results/pilot/schemas/

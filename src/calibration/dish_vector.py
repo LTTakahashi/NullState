@@ -1,10 +1,15 @@
-import numpy as np
-import pandas as pd
-import anndata as ad
-from pathlib import Path
+from __future__ import annotations
+
 import json
 import logging
-import yaml
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import numpy as np
+import pandas as pd
+
+if TYPE_CHECKING:  # anndata appears only in type hints; runtime is duck-typed on .obs/.X,
+    import anndata as ad  # so the pure helpers import with just numpy + pandas installed.
 
 def _subsample_idx(labels: np.ndarray, keep_types: set, max_per_type: int, seed: int = 0) -> np.ndarray:
     """Return sorted row indices: up to `max_per_type` cells per label in `keep_types`."""
@@ -73,7 +78,9 @@ def evaluate_go_nogo(cosine_matrix: pd.DataFrame, threshold: float = 0.70) -> di
     """Evaluates the GO/NO-GO gate for single z_iv."""
     # Extract upper triangle excluding diagonal
     upper_tri = cosine_matrix.where(np.triu(np.ones(cosine_matrix.shape), k=1).astype(bool))
-    mean_cos = upper_tri.mean().mean()
+    # True mean of the pairwise cosines. NB: `.mean().mean()` averages the column means, which
+    # is NOT the mean of the entries when the triangle is uneven -- `.stack()` (drops NaN) is.
+    mean_cos = upper_tri.stack().mean()
     
     decision = "GO" if mean_cos > threshold else "NO-GO"
     
@@ -87,6 +94,7 @@ def evaluate_go_nogo(cosine_matrix: pd.DataFrame, threshold: float = 0.70) -> di
     }
 
 def run_dish_vector_test(query: ad.AnnData, ref: ad.AnnData, gene_sets: dict[str, set], config_path: str = 'config/params.yaml') -> dict:
+    import yaml  # lazy: keeps the module importable (pure helpers) without pyyaml
     with open(config_path, 'r') as f:
         params = yaml.safe_load(f)
         
