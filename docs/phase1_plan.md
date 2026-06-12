@@ -32,7 +32,8 @@ One-line recommendation: **proceed**, but front-load the raw-counts sourcing imm
 - **2026-06-12 — WS2 topology: H₀ done, H₁ exploratory.** `src/geometry/topology.py` — H₀ persistence via the Euclidean MST (single-linkage; **no TDA dependency**) + Fasy bootstrap confidence band + significant-feature test (confirmatory, unit-tested); H₁ loops via lazy-imported `ripser` (exploratory, optional dep) with threshold/k-NN sensitivity.
 - **2026-06-12 — WS1→WS2 wired end-to-end.** `src/geometry/pipeline.py::run_geometry_over_populations` (pure: rarefaction→N_min → all pairwise matched-N tests → Control-3 verdicts → BH-FDR) and `scripts/run_aim3.py` (gets z_lin from a contrastiveVI model [lazy scvi] or a precomputed `.npy`, writes JSON). Pipeline core unit-tested on synthetic 3-population data.
 - **2026-06-12 — full suite green (54 passed).** Also decoupled `src/calibration` + `src/gates` from anndata-at-import (pure helpers run without the DL stack). **Bugfix:** `evaluate_go_nogo` averaged column means, not entries → `.stack().mean()` (true pairwise-cosine mean). ⚠ **PENDING:** this is the statistic behind Gate B "0.906" — recompute on the next dish-vector run and update `reports/nullstate_pilot_report.tex` + `README.md` if it shifts (GO decision unaffected; 0.906 ≫ 0.70).
-- **2026-06-12 — WS3 interpretation: sketched.** `docs/ws3_sketch.md` — CellOracle in-silico TF perturbation (custom base GRN feasible from the Treutlein-2023 multiome ATAC) + in-vivo program anchoring (decoupler/MSigDB Hallmark; closes the mocked-gene-set gap in `run_pilot`). Heavy compute is data-bound; the pure post-processing helpers are buildable here. Not yet coded.
+- **2026-06-12 — WS3 interpretation: sketched.** `docs/ws3_sketch.md` — CellOracle in-silico TF perturbation (custom base GRN feasible from the Treutlein-2023 multiome ATAC) + in-vivo program anchoring (decoupler/MSigDB Hallmark; closes the mocked-gene-set gap in `run_pilot`). Heavy compute is data-bound; the pure post-processing helpers are buildable here.
+- **2026-06-12 — WS3 pure helpers built.** `src/interpret/{perturbation,signatures}.py` — `rank_perturbation_targets` (CellOracle per-cell rescue shifts → ranked TFs; one-sample t-test + BH) and `differential_program_scores` (cell×program scores + labels → convergent-enriched programs; Mann-Whitney U + AUC + BH). Pure numpy/pandas/scipy, unit-tested. CellOracle/decoupler compute remains data-bound.
 
 ---
 
@@ -84,7 +85,7 @@ Legend: ✅ done/validated · 🟡 partial/needs work · 🔴 not started · **B
 | Matched-N null-floor protocol + bootstrap CI | ✅ | `src/geometry/matched_n.py` (2026-06-12, unit-tested) | M |
 | Simulation-based power curves | ✅ | `src/geometry/power.py` (2026-06-12, unit-tested) | M |
 | H₀ persistence (confirmatory) / H₁ (exploratory) | ✅ / 🟡 | H₀ ✅ `topology.py` (pure MST, no dep, unit-tested); H₁ 🟡 lazy `ripser` (optional, exploratory) | M |
-| **#4** CellOracle + in-vivo anchoring | 🟡 | sketched (`docs/ws3_sketch.md`); code data-bound, depends on a convergent population | M–L |
+| **#4** CellOracle + in-vivo anchoring | 🟡 | pure ranking helpers ✅ `src/interpret/` (unit-tested); CellOracle/decoupler compute data-bound (sketch: `docs/ws3_sketch.md`) | M–L |
 | **#5** geosketch subsampling / backed I/O | 🟡 | Lean I/O exists; geosketch does not | S–M |
 | Compute (H100, 251 GB cgroup) | 🟡 | Available; ceiling is a known, recurring constraint | — |
 
