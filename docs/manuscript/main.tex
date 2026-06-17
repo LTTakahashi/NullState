@@ -32,7 +32,7 @@
 \title{\sffamily\bfseries NullState: a reference-anchored framework for detecting,\\ diagnosing, and quantifying the off-target compartment of\\ human neural organoids}
 
 \author[1]{Luiz T.\ Takahashi}
-\affil[1]{\normalsize\itshape Independent research; correspondence: \texttt{ltaktakahashi@gmail.com}}
+\affil[1]{\normalsize\itshape Washington State University, Pullman, WA, USA \\ Correspondence: \texttt{ltaktakahashi@gmail.com}}
 \date{\today}
 
 \begin{document}
@@ -46,21 +46,29 @@ We present \textbf{NullState}, a reference-based pipeline that maps the \nquery-
 Organoid Atlas (HNOCA) onto a harmonized \nref-cell first-trimester human fetal reference
 (HDBCA $+$ a fetal-body atlas) by variational reference surgery, assigns each organoid cell a pair of
 calibrated mapping scores (off-manifold distance and label entropy), and classifies it into a
-six-state off-target taxonomy. Across the atlas, $38.4\%$ of cells fall into an
-\emph{ambiguous-novel} (off-manifold) compartment. Four orthogonal diagnostics show this compartment
-is not a projection artifact but a \emph{structured mixture} of a reference-coverage gap and a
-pervasive in-vitro stress program: off-manifold cells lose neural-progenitor identity while gaining
-hypoxia and unfolded-protein-response signatures, their burden rises monotonically with maturation and
-metabolic load, varies $\sim$240-fold across differentiation protocols ($0.4\%$ to $96.8\%$), and
-concentrates into coherent transcriptomic clusters. We then show, as a reproducible \emph{negative}
-result, that a shared-latent contrastive generative model cannot separate lineage from in-vitro state
-here: an origin-decoding adversary recovers organoid-versus-primary identity from the putatively
-dish-stripped latent at $\geq\!0.998$ balanced accuracy, robustly across latent-capacity and
-batch-conditioning interventions, because the in-vitro state is transcriptome-pervasive rather than a
-separable nuisance subspace. Finally, we demonstrate that off-target geometry is nonetheless
-recoverable: among well-powered off-target populations, all pairwise lineage distances are real
-(clearing a matched-$N$ noise floor by $14$--$105\times$) and biologically ordered, with the two
-myogenic populations closest in the embedding. NullState provides a deployable off-target quality axis
+six-state off-target taxonomy. Across the atlas, $38.4\%$ of cells fall into a large, \emph{largely neural}
+ambiguous-novel (off-manifold) compartment; quantifying and explaining it is the work of Aim~2. Four
+orthogonal diagnostics show it is not a projection artifact but a \emph{structured mixture} of a
+reference-coverage gap and a pervasive in-vitro stress program: off-manifold cells lose
+neural-progenitor identity while gaining hypoxia and unfolded-protein-response signatures, their burden
+rises monotonically with maturation and metabolic load, varies $\sim$240-fold across differentiation
+protocols ($0.4\%$ to $96.8\%$), and concentrates into coherent transcriptomic clusters; projecting
+these cells onto an \emph{independent} prenatal cortex atlas confirms a genuine in-vitro-divergence
+component beyond the reference gap (ambiguous-novel cells sit further from that atlas than clean cells,
+Cliff's $\delta=0.30$). Asking next
+whether lineage can be separated from the organoid-versus-primary shift, we report a reproducible
+\emph{negative} result: a shared-latent contrastive model cannot. An origin-decoding adversary recovers
+organoid-versus-primary identity from the putatively dish-stripped latent at $\geq\!0.998$ balanced
+accuracy, robustly across latent-capacity and batch-conditioning interventions. Because the two sources
+occupy near-disjoint expression manifolds, this shift---biological in-vitro state and technical platform
+differences combined---is pervasive and encoder-visible, not a separable nuisance subspace; we therefore
+state the result methodologically (shared-latent methods cannot yield a source-invariant lineage axis
+here) and read the specifically in-vitro biology from the stress diagnostics rather than from the
+adversary. Finally, on the \emph{non-neural} contaminant populations---where, unlike the
+reference-limited neural compartment, we are statistically powered---we show the method recovers real
+lineage geometry: all pairwise distances clear a matched-$N$ noise floor ($14$--$105\times$) and are
+biologically ordered, the two myogenic populations closest. Aim~3 thus demonstrates on the powered
+compartment what Aim~2's diagnosis implies for the neural one. NullState provides a deployable off-target quality axis
 for organoid studies and a precise account of when latent disentanglement is and is not attainable.
 \end{abstract}
 
@@ -99,12 +107,20 @@ onto it by variational reference surgery \citep{lopez2018scvi,xu2021scanvi,lotfo
 and assign every organoid cell two calibrated mapping scores---an off-manifold reconstruction distance
 and a label-assignment entropy---that jointly define a six-state off-target taxonomy. We organize the
 analysis around three questions: \textbf{(Aim~1)} is the off-target measurement well-posed and
-adequately powered? \textbf{(Aim~2)} can lineage biology be disentangled from the in-vitro state, so
-that off-target cells can be placed on a ``dish-stripped'' lineage axis? and \textbf{(Aim~3)} do
-off-target populations occupy distinct, reproducible geometry? Our central findings are that the
-dominant off-manifold compartment is a structured biological mixture rather than an artifact; that
-shared-latent disentanglement provably fails here for an interpretable reason; and that off-target
-geometry is nevertheless recoverable and biologically coherent.
+adequately powered? \textbf{(Aim~2)} what \emph{is} the dominant, largely neural off-manifold
+compartment, and can lineage be separated from the in-vitro state so that those cells can be placed on a
+``dish-stripped'' lineage axis? and \textbf{(Aim~3)} do off-target populations occupy distinct,
+reproducible geometry? The division of labor between the last two is deliberate and worth stating
+up front. Aim~2 quantifies and explains the neural off-manifold compartment, the bulk of the off-target
+signal but one that the present first-trimester reference cannot yet resolve into clean lineage
+geometry; Aim~3 then turns to the \emph{non-neural} contaminant populations (skeletal and cardiac
+muscle, fibroblast, adrenal-cortical cells), the compartment where the reference \emph{is} complete and
+the cell numbers \emph{are} sufficient, and asks whether the method recovers real lineage structure
+there. Our central findings are that the off-manifold compartment is a structured biological mixture
+rather than an artifact; that shared-latent disentanglement provably fails here for an interpretable
+reason, so the negative is stated methodologically and the biology read from the diagnostics; and that
+off-target geometry, demonstrated on the powered non-neural compartment, is recoverable and
+biologically coherent.
 
 % =====================================================================
 \section{Results}
@@ -179,6 +195,23 @@ off-manifold clusters ($\geq\!80\%$) and $21\%$ in near-pure clean clusters ($\l
 status is a coherent population-level property, visible as contiguous territory in the scPoli UMAP
 \citep{mcinnes2018umap}.
 
+\emph{Direct cross-atlas test (Fig.~\ref{fig:ref2}).} The protocol gradient argues for a coverage-gap
+contribution indirectly; we tested it directly by asking whether off-manifold neural cells map onto an
+\emph{independent}, non-HDBCA reference---the prenatal human cortex of Velmeshev \emph{et al.}
+\citep{velmeshev2023cortex}---reasoning that cells merely missing from HDBCA should be recoverable
+there, whereas genuinely divergent cells should not. The experiment exposes, and is bounded by, the same
+pervasiveness that defeats Aim~2: the organoid-versus-primary source gap displaces \emph{every} organoid
+cell from the independent atlas, including clean on-target cells that map confidently to HDBCA (clean
+median off-manifold distance $4.0$ versus reference-self $2.2$), under both scArches projection and joint
+scVI integration. Absolute ``mapped-on'' fractions are therefore confounded, and we do not report them.
+Instead the clean control \emph{quantifies} that shared displacement, and---exactly as in the Aim~3
+cancellation argument---the clean-versus-ambiguous-novel contrast removes it: ambiguous-novel neural cells
+are significantly and consistently further from the independent cortex manifold than clean cells (area
+under the curve $0.65$, Cliff's $\delta=0.30$, $p<10^{-300}$; $70\%$ exceed the clean median and $15\%$
+lie beyond the clean $95$th percentile). This is direct, confound-controlled evidence for a genuine
+in-vitro-divergence component in the off-manifold compartment, over and above the coverage gap implied by
+the protocol gradient.
+
 Together these diagnostics establish that the dominant off-target compartment is a reproducible
 biological mixture: a \emph{reference-coverage gap} (non-cortical and later neural states absent from a
 first-trimester reference) superimposed on a pervasive \emph{in-vitro stress} program (hypoxia,
@@ -197,19 +230,38 @@ Disentanglement failed, and did so robustly. The baseline model
 ($\dim\ziv=10$) yielded adversary balanced accuracy $0.998$; tripling salient capacity ($\dim\ziv=30$)
 gave $0.999$; and adding a source batch covariate to the decoder---the textbook remedy for a nuisance
 axis confounded with a condition---gave $0.998$. Training converged normally in every case
-(Fig.~\ref{fig:aim2}b), so this is not an optimization failure. The mechanism is structural
-(Fig.~\ref{fig:aim2}c): because the in-vitro state is transcriptome-pervasive (Fig.~\ref{fig:diag})
-and organoid and fetal cells occupy near-disjoint regions of expression space, the background
-\emph{encoder} $q(\zlin\!\mid\!x)$ observes and encodes source identity directly; conditioning the
-\emph{decoder} on a batch label cannot undo what the encoder has already written into \zlin. We
-therefore report, as a precise negative result, that shared-latent contrastive disentanglement is not
-attainable in the fetal-versus-organoid regime: the dish signature is not a separable subspace but a
-global transcriptional shift. This delimits where ``calibration without anchoring'' can and cannot be
-applied and motivates encoder-side or distributional alternatives.
+(Fig.~\ref{fig:aim2}b), so this is not an optimization failure. The mechanism is structural and, given
+how different the two sources are, largely \emph{expected}: the contribution here is to characterize
+precisely \emph{why} a shared latent cannot work, not to present the failure as a surprise. When
+organoid and fetal cells occupy near-disjoint regions of expression space, source identity is almost
+definitionally decodable and there is no overlap region in which a shared lineage axis is even well
+defined---the background \emph{encoder} $q(\zlin\!\mid\!x)$ observes and encodes the
+organoid-versus-primary difference directly, and conditioning the \emph{decoder} on a batch label cannot
+undo what the encoder has already written into \zlin{} (Fig.~\ref{fig:aim2}c). Two scope limits on the
+interpretation follow, and we are explicit about them. First, the adversary establishes only that this
+difference is decodable, not what it is made of: organoid and primary datasets differ in biological
+in-vitro state \emph{and} in laboratory, dissociation, platform, and ambient-RNA profile, every one of
+which is transcriptome-pervasive and would on its own render source decodable. The experiment therefore
+supports a claim we can fully defend---shared-latent contrastive methods cannot produce a
+source-invariant lineage axis in this regime---whereas the specifically \emph{in-vitro} character of the
+dominant axis is established not by the adversary but by the stress diagnostics of the previous section
+(Fig.~\ref{fig:diag}). Second, the donor-keyed integration used for mapping does not correct the far
+deeper organoid-versus-primary divide, so that divide is precisely what the background latent inherits.
+We accordingly state the negative result methodologically and read its biology from Aim~2's signatures.
+This delimits where ``calibration without anchoring'' can and cannot be applied and motivates
+encoder-side or distributional alternatives.
 
 \subsection{Off-target populations occupy distinct, biologically coherent geometry}
-The disentanglement failure does not, however, invalidate the geometry of off-target populations
-relative to one another. Aim~3 compares off-target \emph{organoid} populations against \emph{each
+Having quantified the largely neural off-manifold compartment in Aim~2, we turn to the part of the
+off-target landscape where the reference is complete and the populations are large enough to support
+geometry: the \emph{non-neural} contaminant lineages. This division of labor is deliberate. The neural
+off-manifold cells are the larger compartment, but, as Aim~2 showed, a first-trimester reference cannot
+yet resolve them into clean lineage structure (it conflates genuine in-vitro divergence with its own
+coverage gaps); the non-neural contaminants---skeletal and cardiac muscle, fibroblast, and
+adrenal-cortical cells---instead map to a \emph{complete} fetal-body reference and number in the
+thousands, making them the compartment on which the geometry method can be put to a fair test. The
+disentanglement failure does not invalidate the geometry of these populations relative to one another.
+Aim~3 compares off-target \emph{organoid} populations against \emph{each
 other}; because all such cells share the same organoid-versus-primary offset in \zlin, that offset is a
 constant translation that cancels exactly in pairwise sliced-Wasserstein distances
 ($W(\mathcal{A}{+}c,\mathcal{B}{+}c)=W(\mathcal{A},\mathcal{B})$) \citep{bonneel2015sliced}. The
@@ -218,8 +270,9 @@ contamination shifts all populations together and therefore does not distort the
 We computed pairwise lineage distances among the true off-target populations, controlling for sample
 size by a rarefaction-derived minimum ($N_{\min}=2000$) and a matched-$N$ self-distance noise floor; a
 pair is called only if its cross-distance confidence interval clears the floor (Fig.~\ref{fig:aim3}).
-Of the $17$ off-target populations, four are well powered (cortical-adrenal $49{,}338$;
-skeletal-muscle $30{,}629$; fibroblast $6{,}349$; cardiac-muscle $2{,}534$). All six pairwise
+Of the $17$ off-target populations, four \emph{non-neural contaminant} lineages are well powered
+(cortical-adrenal $49{,}338$; skeletal-muscle $30{,}629$; fibroblast $6{,}349$; cardiac-muscle
+$2{,}534$). All six pairwise
 comparisons are real differences, each clearing the noise floor by $14$ to $105\times$
 ($W$ from $0.32$ to $0.99$ against floors of $0.007$--$0.026$); the remaining $130$ small-$N$
 comparisons are correctly returned as underpowered. Crucially, the recovered geometry is
@@ -242,13 +295,16 @@ mirroring \citet{bhaduri2020stress}, provides a per-cell, deployable readout for
 stress-mitigation strategies. The $\sim$240-fold protocol spread additionally yields a concrete,
 reference-anchored fidelity ranking across organoid platforms.
 
-Second, our negative disentanglement result is, we believe, useful precisely because it is
-characterized. The widespread intuition that a contrastive or batch-aware latent can ``subtract the
-dish'' presupposes that the in-vitro state is a separable nuisance subspace. We show that in the
-fetal-versus-organoid regime it is not---it is a global, encoder-visible shift---so shared-latent
-methods cannot produce a source-invariant lineage axis regardless of salient capacity or decoder batch
-conditioning. Methods that intervene at the encoder (e.g., adversarial or invariance-penalized
-encoders) or that operate distributionally rather than per-cell are the appropriate next step.
+Second, our negative disentanglement result is useful precisely because it is characterized, and we are
+deliberate about what it does and does not claim. The widespread intuition that a contrastive or
+batch-aware latent can ``subtract the dish'' presupposes that the organoid-versus-primary difference is a
+separable nuisance subspace. We show that in this regime it is not---it is a pervasive, encoder-visible
+shift---so shared-latent methods cannot produce a source-invariant lineage axis regardless of salient
+capacity or decoder batch conditioning. That methodological conclusion holds whether the shift is
+biological or technical in origin; the separate evidence that its dominant component is specifically the
+in-vitro stress state comes from the Aim~2 diagnostics, not from the adversary, and the two should not be
+conflated. Methods that intervene at the encoder (e.g., adversarial or invariance-penalized encoders) or
+that operate distributionally rather than per-cell are the appropriate next step.
 
 Third, and reassuringly, the quantity Aim~3 actually needs---the \emph{relative} geometry of off-target
 populations---survives the disentanglement failure by an exact cancellation argument, and recovers
@@ -258,7 +314,12 @@ attainable.
 
 Limitations follow directly from the analysis. Off-manifold status conflates reference gap with
 biological aberrance, so absolute off-target rates are reference-dependent and should be read
-comparatively. The dish-vector and stress scores are signature-based proxies. The well-powered Aim~3
+comparatively; indeed the pervasive organoid-versus-primary source gap displaces even clean,
+HDBCA-validated cells from an independent atlas, so the \emph{absolute} coverage-gap fraction is not
+directly measurable (Fig.~\ref{fig:ref2}). The protocol gradient and the clean-calibrated cross-atlas
+contrast are the available evidence, and they agree on a mixture rather than on either pole. The
+dish-vector and stress scores are signature-based proxies, partially corroborated by the maturation
+correlation and the independent-atlas divergence signal. The well-powered Aim~3
 populations are non-neural off-target lineages; neural off-target geometry awaits a reference that
 closes the coverage gap. Finally, pairwise distances are robust to the global source offset but may
 still include a component of \emph{differential} in-vitro state between populations; the
@@ -304,6 +365,17 @@ highly variable genes, raw-count layer). Disentanglement was scored by a five-fo
 logistic-regression adversary predicting organoid-versus-primary origin from the background latent
 \zlin{} (balanced accuracy). Interventions: salient dimension $10\!\rightarrow\!30$, and a source
 batch covariate registered through \texttt{setup\_anndata}.
+
+\paragraph{Second-reference test.} To probe coverage gap versus divergence directly, we jointly
+integrated $30{,}000$ ambiguous-novel and $15{,}000$ clean-on-target neural organoid cells with
+$100{,}000$ prenatal cells of an independent cortical atlas (Velmeshev \emph{et al.}
+\citep{velmeshev2023cortex}; gestational ``LMP-month'' stages, drawn from the CELLxGENE Census) using
+scVI with the dataset as batch key ($3000$ shared highly variable genes, $30$-dimensional latent). Each
+organoid cell's off-manifold score is its mean distance to the $15$ nearest reference cells in the
+integrated latent. Because clean and ambiguous-novel cells share the same organoid-versus-reference
+displacement, the absolute on-manifold fraction is confounded; we therefore calibrate against the clean
+distribution and report the clean-versus-ambiguous-novel effect size (Mann--Whitney AUC, Cliff's
+$\delta$) and the fraction of ambiguous-novel cells beyond clean percentiles.
 
 \paragraph{Geometry.} For each off-target population pair we estimated the sliced-Wasserstein distance
 \citep{bonneel2015sliced} between background-latent embeddings, with a per-population minimum sample
@@ -388,6 +460,23 @@ $14$--$105\times$ (cross-distance with $95\%$ CI, blue; log axis).
 (\textbf{d}) Multidimensional scaling of the distance matrix: the two myogenic populations (cardiac,
 skeletal muscle) are closest, fibroblast most distant, as expected for a lineage embedding.}
 \label{fig:aim3}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.96\linewidth]{figs/fig6.pdf}
+\caption{\textbf{Direct cross-atlas test of coverage gap versus divergence.} Ambiguous-novel and
+clean-on-target neural organoid cells were jointly integrated with an \emph{independent} prenatal
+cortical atlas (Velmeshev \emph{et al.}\ 2023 \citep{velmeshev2023cortex}).
+(\textbf{a}) Off-manifold score (kNN distance to the independent reference) for reference-self (grey),
+clean neural (blue), and ambiguous-novel neural (red). The organoid-versus-reference source gap
+displaces \emph{all} organoid cells---including clean cells---far from the reference (clean/ambiguous
+medians $4.0/4.4$ versus reference-self $2.2$), so absolute mapped-on fractions are confounded; the
+clean distribution (dashed median, dotted $95$th percentile) is the calibrator.
+(\textbf{b}) The clean-versus-ambiguous contrast cancels the shared displacement: $70\%$ of
+ambiguous-novel cells exceed the clean median and $15\%$ lie beyond the clean $95$th percentile (overall
+$\mathrm{AUC}=0.65$, Cliff's $\delta=0.30$), isolating a genuine in-vitro-divergence component.}
+\label{fig:ref2}
 \end{figure}
 
 % ---------- bibliography ----------
