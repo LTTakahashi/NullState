@@ -49,7 +49,7 @@ def compute_mapping_entropy(query_model: scvi.model.SCANVI, query: ad.AnnData,
         logging.info("Applying empirical label-prior correction to soft predictions...")
         soft = _apply_label_prior(soft, class_prior)
     logging.info("Computing Shannon entropy...")
-    entropy = soft.apply(lambda r: scipy.stats.entropy(r), axis=1).values
+    entropy = scipy.stats.entropy(soft.to_numpy(), axis=1)
     return entropy, soft
 
 def compute_offmanifold_score(ref_model: scvi.model.SCANVI, ref: ad.AnnData, query_model: scvi.model.SCANVI, query: ad.AnnData, k: int = 15) -> np.ndarray:
@@ -80,10 +80,18 @@ def calibrate_thresholds(ref_model: scvi.model.SCANVI, ref: ad.AnnData, holdout_
     holdout_indices = np.random.choice(ref.n_obs, n_holdout, replace=False)
     ref_holdout = ref[holdout_indices].copy()
 
+    # Complementary train split (reference MINUS holdout). The off-manifold kNN must be
+    # fit on this train subset only; fitting on the full reference would let each holdout
+    # cell find ITSELF (distance 0), deflating tau_R and inflating 'ambiguous_novel' at
+    # scoring time. This mirrors the scoring-time asymmetry: the query is never in the fit set.
+    train_mask = np.ones(ref.n_obs, dtype=bool)
+    train_mask[holdout_indices] = False
+    ref_train = ref[train_mask].copy()
+
     # Compute on holdout
     # We use the ref_model for both as this is purely reference data.
     entropy, _ = compute_mapping_entropy(ref_model, ref_holdout, class_prior=class_prior)
-    offmanifold = compute_offmanifold_score(ref_model, ref, ref_model, ref_holdout, k=k)
+    offmanifold = compute_offmanifold_score(ref_model, ref_train, ref_model, ref_holdout, k=k)
     
     tau_H = np.percentile(entropy, tau_H_percentile)
     tau_R = np.percentile(offmanifold, tau_R_percentile)
@@ -101,6 +109,13 @@ def calibrate_thresholds(ref_model: scvi.model.SCANVI, ref: ad.AnnData, holdout_
 def annotate_query(query: ad.AnnData, query_model: scvi.model.SCANVI, entropy: np.ndarray, offmanifold: np.ndarray, origin_map: dict, soft: pd.DataFrame) -> ad.AnnData:
     """Adds mapping entropy, off-manifold scores, and predicted origins to the query."""
     logging.info("Annotating query AnnData...")
+    # Tag which cells were actually scored vs dropped upstream (e.g. low-count cells
+    # filtered before scArches). Lets the classifier distinguish QC-dropped cells from
+    # genuinely unmappable ones.
+    query.obs['scored'] = query.obs_names.isin(soft.index)
+    n_unscored = int(query.n_obs - query.obs['scored'].sum())
+    logging.info(f"Scored {int(query.obs['scored'].sum())} / {query.n_obs} query cells "
+                 f"({n_unscored} unscored / QC-dropped upstream).")
     query.obs['map_entropy'] = pd.Series(entropy, index=soft.index)
     query.obs['offmanifold'] = pd.Series(offmanifold, index=soft.index)
     

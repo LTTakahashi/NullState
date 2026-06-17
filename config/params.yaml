@@ -5,6 +5,17 @@
 n_hvg: 4000
 hvg_flavor: seurat_v3
 
+# Reference build (Step 1). Cao fetal supplies the NON-neural off-target anchors; HDBCA is the
+# neural core. Subset Cao by the CELLxGENE ontology cell_type via origin_map to these germ layers.
+reference_cell_type_col: cell_type
+reference_keep_origins: [mesoderm, endoderm, neural_crest]
+# RAM guard: cap the Cao anchor subset (null = keep all that map). The non-neural subset is far
+# smaller than the full ~4M-cell Cao; null is fine on the 251GB H100 pod, set e.g. 200000 on a tight box.
+fetal_max_cells: null
+# If true, reference cell_types with no origin mapping pass through as 'unknown' instead of
+# aborting the build. Keep false so an unmapped type is caught BEFORE the multi-hour run.
+allow_unmapped_origins: false
+
 # scANVI / scArches
 n_latent: 30
 # Batch key for SCVI/SCANVI integration across the two source atlases.
@@ -14,17 +25,29 @@ n_latent: 30
 # removes nuisance technical variation without explicitly collapsing the
 # neural-vs-non-neural axis. Set to null to disable integration (NOT recommended).
 batch_key: donor_id
-# scArches surgery epochs. Set to 0 = stable pure reference projection (the original
-# validated approach). >0 enables query fine-tuning but is numerically UNSTABLE on this
-# query because HNOCA lacks true raw UMI counts (only log-norm + length-normalized),
-# so the reference ZINB likelihood is mis-specified during surgery and diverges to NaN.
-# Re-enable (e.g. 100) once true raw UMI counts are sourced for the query (Phase 1).
-scarches_max_epochs: 0
+# scArches surgery epochs. The CELLxGENE HNOCA copy carries genuine integer UMI counts in
+# raw.X (promoted to X by _use_query_raw_counts), so the reference ZINB likelihood is now
+# correctly specified and surgery is stable. 100 enables real query fine-tuning, replacing
+# the pilot's 0-epoch projection (which inflated the 37.7% ambiguous_novel fraction).
+# PRECONDITION: valid ONLY with the raw.X count fix in place -- verify the run log shows the
+# raw-counts path and NOT "Scaling query data by 283" (if it does, set this back to 0).
+scarches_max_epochs: 100
 # Drop query cells with fewer than this many counts across the reference HVGs.
 # The query expresses these HVGs sparsely (median ~190); near-empty cells cause
 # scArches encoder NaN divergence and are uninformative for label transfer.
 query_min_hvg_counts: 50
 scarches_weight_decay: 0.0
+# scArches surgery stability (the query is sparse; even with real raw.X counts the fine-tuning
+# can diverge -> encoder NaN). These tame it: low LR, tight gradient-norm clip, and a KL warmup
+# so the posterior is not pushed to extreme latents early. Loosen lr toward 5e-5 only if surgery
+# is stable and under-fitting. Observed NaN at lr=5e-5/clip=0.5/no-warmup.
+scarches_lr: 1.0e-5
+scarches_grad_clip: 0.1
+scarches_kl_warmup_epochs: 20
+# Drop read-count (non-UMI) cells before surgery: HNOCA mixes UMI assays (per-cell max raw count
+# ~100) with Smart-seq2/Quartz-seq read counts (~50,000) that diverge the NB/ZINB encoder to NaN.
+# Cells whose per-cell max count exceeds this are excluded from scArches fine-tuning (surgery only).
+scarches_max_count_per_cell: 1000
 scvi_max_epochs: 400
 scanvi_max_epochs: 200
 # scANVI hardening (Phase 1 / WS0b): stop on the validation plateau instead of always
@@ -63,6 +86,12 @@ contrastive_n_salient_latent: 10      # z_iv dims
 contrastive_max_epochs: 200
 contrastive_early_stopping: true
 contrastive_early_stopping_patience: 15
+# WS1 cell caps (RAM/compute guard before contrastiveVI; null = keep all). The full primary
+# on-target + organoid on-target sets are ~1-2M cells each; cap them. Off-target is small
+# (~thousands), usually kept whole. scripts/run_ws1.py subsamples to these before training.
+contrastive_max_background: 100000
+contrastive_max_target: 100000
+contrastive_max_offtarget: 100000
 
 # Dish-vector test (Step 3)
 cosine_go_threshold: 0.70
@@ -71,6 +100,10 @@ cosine_go_threshold: 0.70
 count_green_total: 1000
 count_green_per_protocol: 300
 count_yellow_total: 300
+# Obs column to group by for the per-protocol Gate C count. The CELLxGENE HNOCA has NO
+# 'protocol' column; the ~27-study differentiation axis is 'assay_differentiation'
+# (or 'publication'). Must NOT fall back to 'batch' (395 micro-batches => GREEN unreachable).
+count_protocol_column: assay_differentiation
 
 # Mesenchymal regex pattern for label matching
 mesenchymal_pattern: "mesench|stroma|fibro"

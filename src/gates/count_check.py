@@ -11,20 +11,22 @@ import pandas as pd
 if TYPE_CHECKING:  # anndata appears only in type hints; runtime is duck-typed on .obs,
     import anndata as ad  # so the pure gate logic imports with just pandas installed.
 
-def count_offtarget_mesenchyme(query: ad.AnnData, class_column: str = 'pilot_class', label_column: str = 'pred_label', pattern: str = 'mesench|stroma|fibro', protocol_column: str = 'protocol') -> dict:
-    """Counts true_offtarget cells matching mesenchymal pattern."""
-    # Ensure protocol column exists
+def count_offtarget_mesenchyme(query: ad.AnnData, class_column: str = 'pilot_class', label_column: str = 'pred_label', pattern: str = 'mesench|stroma|fibro', protocol_column: str = 'assay_differentiation') -> dict:
+    """Counts true_offtarget cells matching mesenchymal pattern, grouped per protocol/study."""
+    # Resolve the per-protocol grouping column. The CELLxGENE HNOCA has NO 'protocol' column;
+    # 'assay_differentiation' / 'publication' are the ~27-study differentiation axes. NEVER fall
+    # back to 'batch' (395 micro-batches) -- that makes the GREEN rule (>=2 protocols each N>=300)
+    # structurally unreachable and silently downgrades a GREEN dataset to YELLOW.
     if protocol_column not in query.obs.columns:
-        # Fallback to dataset id or similar if protocol is missing
-        fallback_cols = ['id', 'dataset_id', 'batch']
-        for col in fallback_cols:
+        for col in ('assay_differentiation', 'publication', 'protocol'):
             if col in query.obs.columns:
                 protocol_column = col
-                logging.warning(f"'protocol' column missing. Using '{col}' instead.")
+                logging.warning(f"protocol column not found; using '{col}' for per-protocol counts.")
                 break
         else:
             query.obs['dummy_protocol'] = 'unknown'
             protocol_column = 'dummy_protocol'
+            logging.warning("No protocol-like column found; per-protocol gate will be degenerate.")
             
     mask = (query.obs[class_column] == 'true_offtarget') & \
            (query.obs[label_column].str.contains(pattern, flags=re.IGNORECASE, na=False))
@@ -102,8 +104,9 @@ def run_count_check(query: ad.AnnData, config_path: str = 'config/params.yaml') 
     green_total = params.get('count_green_total', 1000)
     green_per_protocol = params.get('count_green_per_protocol', 300)
     yellow_total = params.get('count_yellow_total', 300)
-    
-    counts = count_offtarget_mesenchyme(query, pattern=pattern)
+    protocol_column = params.get('count_protocol_column', 'assay_differentiation')
+
+    counts = count_offtarget_mesenchyme(query, pattern=pattern, protocol_column=protocol_column)
     gate = evaluate_gate(counts, green_total, green_per_protocol, yellow_total)
     
     diagnostic = None

@@ -196,7 +196,22 @@ def _remap_query_to_ensembl(query: ad.AnnData) -> ad.AnnData:
     symbols recovers only ~15% of the reference HVGs; switching to the Ensembl column
     raises the overlap to ~74%, which is what scArches needs for a usable mapping.
     Genes with a missing or duplicated Ensembl ID are dropped.
+
+    The CELLxGENE copy of HNOCA is already Ensembl-indexed (no ``ensembl`` column needed);
+    in that case we only strip any version suffix and deduplicate, then return.
     """
+    import pandas as pd
+    vn = pd.Index(query.var_names).astype(str)
+    if vn.str.startswith('ENSG').mean() > 0.5:
+        # Already Ensembl-indexed (CELLxGENE schema). Strip version suffixes (ENSG...".12")
+        # so it intersects the unversioned reference; drop duplicates; return.
+        query.var_names = vn.str.split('.').str[0].values
+        dup = pd.Index(query.var_names).duplicated()
+        if dup.any():
+            query = query[:, ~dup].copy()
+        logging.info(f"Query already Ensembl-indexed; stripped version suffixes "
+                     f"({query.n_vars} genes after dedup).")
+        return query
     if 'ensembl' not in query.var.columns:
         logging.warning("Query has no 'ensembl' var column; leaving var_names as gene symbols.")
         return query
@@ -220,12 +235,12 @@ def _use_query_raw_counts(query: ad.AnnData):
     """Prefer genuine raw counts for the query; returns (query, is_raw_counts).
 
     SCVI/SCANVI model raw counts with an NB/ZINB likelihood, so the query must be raw
-    counts too. HNOCA's ``X`` is log-normalized, but integer UMI counts are retained in
-    ``layers['counts_lengthnorm']`` (despite the name, the values are integers: 1,2,3...).
-    Count layers share the var axis, so they stay aligned after the Ensembl remap. We
-    use such a layer when present; otherwise the caller falls back to the approximate
-    283x rescale. ``.raw`` is intentionally not used (its var axis differs from the
-    remapped query and would need separate alignment).
+    counts too. Counts may live in (a) an integer layer (the old Zenodo file:
+    ``layers['counts_lengthnorm']``), (b) ``X`` itself, or (c) ``.raw.X`` (the CELLxGENE
+    file: ``X`` is log-normalized, ``layers`` is empty, ``raw.X`` holds the integer UMIs,
+    with ``raw.var_names`` aligned to ``var_names``). We try them in that order, reindexing
+    ``.raw`` onto the current var axis; only if none yield integer counts does the caller
+    fall back to the approximate 283x rescale.
     """
     import numpy as np
     import scipy.sparse as sp
@@ -248,8 +263,28 @@ def _use_query_raw_counts(query: ad.AnnData):
     if _is_integer(query.X) and float(query.X.max()) > 30:
         logging.info("Query X already appears to be raw integer counts.")
         return query, True
-    logging.warning("No raw counts found for query (X looks normalized; no integer count layer). "
-                    "Falling back to the approximate 283x log-norm rescale.")
+    # Integer UMI counts in .raw -- the CELLxGENE schema (X is log-normalized, layers empty,
+    # raw.X holds the integer counts). raw.var_names align to var_names here (the query is
+    # already Ensembl-indexed and this runs before the HVG subset), so reindex .raw onto the
+    # current var axis and promote it to X.
+    raw = getattr(query, 'raw', None)
+    if raw is not None:
+        raw_names = list(map(str, raw.var_names))
+        if raw_names == list(map(str, query.var_names)):
+            raw_X = raw.X
+        else:
+            pos = {g: i for i, g in enumerate(raw_names)}
+            cols = [pos[g] for g in map(str, query.var_names) if g in pos]
+            raw_X = raw.X[:, cols] if len(cols) == query.n_vars else None
+        if raw_X is not None and _is_integer(raw_X) and float(raw_X.max()) > 30:
+            query.X = raw_X.copy()
+            query.layers.clear()
+            del query.raw
+            logging.info("Using query.raw.X (integer UMI counts; CELLxGENE schema) as raw counts "
+                         "for scVI mapping.")
+            return query, True
+    logging.warning("No raw counts found for query (X looks normalized; empty layers; no integer "
+                    ".raw). Falling back to the approximate 283x log-norm rescale.")
     return query, False
 
 
@@ -296,7 +331,10 @@ def map_query_scarches(
     output_dir: Path,
     max_epochs: int = 100,
     weight_decay: float = 0.0,
-    checkpoint_every: int = 25
+    checkpoint_every: int = 25,
+    lr: float = 1e-5,
+    gradient_clip_val: float = 0.1,
+    kl_warmup_epochs: int = 20,
 ) -> scvi.model.SCANVI:
     """Map query via scArches surgery with checkpointing."""
     logging.info("Preparing query data for scArches surgery...")
@@ -312,19 +350,21 @@ def map_query_scarches(
     t0 = time.time()
     train_kwargs = dict(
         max_epochs=max_epochs,
-        plan_kwargs={'weight_decay': weight_decay, 'lr': 5e-5},
+        plan_kwargs={'weight_decay': weight_decay, 'lr': lr,
+                     'n_epochs_kl_warmup': kl_warmup_epochs},
         enable_checkpointing=True,
         batch_size=1024,
         accelerator='gpu' if torch.cuda.is_available() else 'auto',
         callbacks=[ckpt_callback],
     )
     if max_epochs > 0:
-        # Surgery fine-tuning: stabilizers against encoder NaN on the sparse query.
-        # NOTE: with the query lacking true raw UMI counts (only length-normalized),
-        # the reference ZINB likelihood is mis-specified and surgery can still diverge;
-        # max_epochs=0 falls back to a stable pure reference projection.
+        # Surgery fine-tuning stabilizers against encoder NaN divergence on the sparse query:
+        # a low LR (lr), tight gradient clipping (gradient_clip_val), and a KL warmup
+        # (kl_warmup_epochs) so the posterior is not pushed to extreme latents early. With real
+        # raw.X counts the ZINB is well-specified, but the optimization can still diverge without
+        # these -- observed: train loss 700 -> 8.8e6 -> encoder NaN at lr=5e-5/clip=0.5/no-warmup.
         train_kwargs.update(check_val_every_n_epoch=1, early_stopping=True,
-                            early_stopping_patience=15, gradient_clip_val=0.5)
+                            early_stopping_patience=15, gradient_clip_val=gradient_clip_val)
     query_model.train(**train_kwargs)
     elapsed = time.time() - t0
     
@@ -418,6 +458,10 @@ def run_training_pipeline(
         query = ad.read_h5ad(query_path)
         query = _remap_query_to_ensembl(query)
         query = _ensure_query_batch(query, params.get('batch_key'))
+        # Mirror the fresh-path prep so query_model.adata is identical on resume.
+        query, _ = _use_query_raw_counts(query)
+        query = query[:, query.var_names.intersection(ref.var_names)].copy()
+        sc.pp.filter_cells(query, min_counts=params.get('query_min_hvg_counts', 50))
         scvi.model.SCANVI.prepare_query_anndata(query, ref_scanvi)
         query_model = scvi.model.SCANVI.load(str(output_dir / 'query_scanvi'), adata=query)
     else:
@@ -426,6 +470,13 @@ def run_training_pipeline(
         query = _remap_query_to_ensembl(query)
         query = _ensure_query_batch(query, params.get('batch_key'))
         query, query_is_counts = _use_query_raw_counts(query)
+        if not query_is_counts:
+            ensg = sum(str(v).startswith('ENSG') for v in query.var_names[:5000]) / max(1, min(5000, query.n_vars))
+            if ensg > 0.5:
+                raise RuntimeError(
+                    "Query is Ensembl-indexed (CELLxGENE schema) but no integer raw counts were found "
+                    "(raw.X missing/normalized). Refusing the 283x log-norm fallback -- it mis-specifies "
+                    "the ZINB likelihood (the pilot's #1 bug). Verify the query file carries raw.X counts.")
 
         logging.info("Subsetting query to match reference HVGs...")
         # ref has been subset to exactly the 4000 HVGs above
@@ -433,6 +484,7 @@ def run_training_pipeline(
 
         import scipy.sparse as sp
         import numpy as np
+        assert sp.issparse(query.X), "query X densified after HVG subset -- would OOM at 1.77M x HVG"
 
         if not query_is_counts:
             # Fallback only: query was log-normalized and no raw counts were found.
@@ -469,6 +521,21 @@ def run_training_pipeline(
         logging.info(f"Filtered query to cells with >= {min_hvg_counts} counts across HVGs: "
                      f"{n_before} -> {query.n_obs} ({100*(n_before-query.n_obs)/max(n_before,1):.1f}% dropped).")
 
+        # Drop non-UMI (read-count) cells before scArches SURGERY only. HNOCA mixes UMI assays
+        # (max raw count ~100) with full-length read-count assays (Smart-seq2/Quartz-seq, max
+        # ~50,000); the read-count cells blow the NB/ZINB encoder library size up to NaN during
+        # fine-tuning (0-epoch projection is immune). Assay-agnostic per-cell max-count cap.
+        if params.get('scarches_max_epochs', 0) > 0:
+            cap = params.get('scarches_max_count_per_cell', 1000)
+            pcm = (np.asarray(query.X.max(axis=1).todense()).ravel()
+                   if sp.issparse(query.X) else np.asarray(query.X).max(axis=1))
+            keep = pcm <= cap
+            n_drop = int((~keep).sum())
+            if n_drop:
+                query = query[keep].copy()
+                logging.warning(f"Dropped {n_drop} non-UMI read-count cells (per-cell max > {cap}) before "
+                                f"scArches surgery to prevent encoder NaN; {query.n_obs} cells remain.")
+
         if 'cell_type' in query.obs.columns:
             query.obs['original_cell_type'] = query.obs['cell_type']
         query.obs['cell_type'] = 'Unknown'
@@ -477,6 +544,9 @@ def run_training_pipeline(
             query, ref_scanvi, output_dir,
             max_epochs=params.get('scarches_max_epochs', 100),
             weight_decay=params.get('scarches_weight_decay', 0.0),
+            lr=params.get('scarches_lr', 1e-5),
+            gradient_clip_val=params.get('scarches_grad_clip', 0.1),
+            kl_warmup_epochs=params.get('scarches_kl_warmup_epochs', 20),
         )
         save_model(query_model, output_dir / "query_scanvi")
     

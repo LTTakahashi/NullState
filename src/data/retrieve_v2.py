@@ -131,7 +131,14 @@ def download_via_census_soma(collection_id: str, output_path: Path,
                 idx = np.random.choice(adata.n_obs, max_cells, replace=False)
                 adata = adata[idx].copy()
                 print(f"  Subsampled to {max_cells} cells")
-            
+
+            # Census indexes var by integer position; the Ensembl IDs live in var['feature_id'].
+            # Promote them to var_names so the atlas aligns with the Ensembl-indexed query.
+            if 'feature_id' in adata.var.columns:
+                adata.var_names = adata.var['feature_id'].astype(str).values
+                adata.var_names_make_unique()
+                print(f"  Set var_names from feature_id (Ensembl)")
+
             print(f"  Got {adata.n_obs} cells × {adata.n_vars} genes")
             print(f"  .obs columns: {list(adata.obs.columns)}")
             

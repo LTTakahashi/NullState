@@ -5,8 +5,12 @@ datasets:
   hnoca:
     name: "Human Neural Organoid Cell Atlas"
     cellxgene_collection_id: "de379e5f-52d0-498c-9801-0f850823c847"
-    zenodo_url: "https://zenodo.org/records/14161275/files/hnoca_cleanedmeta.h5ad"
-    local_path: data/hnoca.h5ad
+    # CANONICAL QUERY = the CELLxGENE copy (dataset "The Human Neural Organoid Atlas").
+    # It carries genuine integer raw UMI counts in raw.X and Ensembl var_names, which the
+    # Zenodo hnoca_cleanedmeta.h5ad lacked (log-norm + length-norm only) -- that gap forced
+    # the pilot to 0-epoch projection. Fetch with scripts/fetch_verify_cellxgene.py.
+    zenodo_url: "https://zenodo.org/records/14161275/files/hnoca_cleanedmeta.h5ad"  # legacy; NOT used
+    local_path: data/hnoca_cellxgene.h5ad
     paper: "He, Fleck et al. Nature 2024"
   hdbca:
     name: "Human Developmental Brain Cell Atlas"

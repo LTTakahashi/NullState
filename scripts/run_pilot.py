@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import yaml
 import anndata as ad
+import pandas as pd
 import sys
 
 # Add src to python path
@@ -23,16 +24,50 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def read_annotated_lean(path) -> ad.AnnData:
-    """Read the annotated query WITHOUT its heavy count layer.
+def assert_cellxgene_query_schema(path):
+    """Fail loudly if the query is not the CELLxGENE HNOCA copy (Ensembl var_names + raw.X counts).
 
-    Steps 3/4 only need X (log-norm) + obs + var. The query carries a
-    `counts_lengthnorm` layer (~4 billion nonzeros) which, loaded alongside the
-    reference, blows past the container's 251 GB cgroup limit and OOM-kills the run.
-    Backed read + reconstruct loads only X, never the layer.
+    Guards against silently running on the legacy Zenodo file (gene-symbol var_names, no usable
+    raw.X), which sends scArches surgery down the 283x log-norm fallback (mis-specified ZINB).
     """
     a = ad.read_h5ad(path, backed='r')
-    lean = ad.AnnData(X=a.X[:], obs=a.obs.copy(), var=a.var.copy())
+    try:
+        frac_ensg = float(pd.Index(a.var_names).astype(str).str.startswith('ENSG').mean())
+        has_raw = a.raw is not None
+    finally:
+        try:
+            a.file.close()
+        except Exception:
+            pass
+    problems = []
+    if frac_ensg < 0.5:
+        problems.append(f"var_names not Ensembl ({frac_ensg:.0%} ENSG)")
+    if not has_raw:
+        problems.append("no .raw (raw integer UMI counts missing)")
+    if problems:
+        raise SystemExit(
+            f"Query at {path} is not the CELLxGENE HNOCA copy: {', '.join(problems)}. "
+            f"Fetch it with scripts/fetch_verify_cellxgene.py and point paths.yaml "
+            f"datasets.hnoca.local_path at data/hnoca_cellxgene.h5ad."
+        )
+    logging.info(f"Query schema OK: {frac_ensg:.0%} ENSG var_names, .raw present (CELLxGENE copy).")
+
+
+def read_annotated_lean(path, obs_only: bool = False) -> ad.AnnData:
+    """Read the annotated query WITHOUT its heavy count data.
+
+    Step 3 needs X (log-norm) + obs + var; Step 4 (count gate) is obs-only. The annotated file
+    is slimmed at write time (layers/obsm/uns cleared), but the 1.77M-cell X is still large, so
+    we backed-read and reconstruct only what is needed -- and for ``obs_only`` we skip X entirely
+    (a 1-gene placeholder) so the count gate never materializes the full matrix.
+    """
+    a = ad.read_h5ad(path, backed='r')
+    if obs_only:
+        import numpy as np
+        import scipy.sparse as sp
+        lean = ad.AnnData(X=sp.csr_matrix((a.n_obs, 1), dtype=np.float32), obs=a.obs.copy())
+    else:
+        lean = ad.AnnData(X=a.X[:], obs=a.obs.copy(), var=a.var.copy())
     try:
         a.file.close()
     except Exception:
@@ -70,15 +105,17 @@ def main():
             logger.info(f"Reference already exists at {ref_out}. Skipping build.")
         else:
             origin_map = get_default_origin_map()
-            fetal_lineages = [
-                'Stromal cells', 'Vascular endothelial cells', 'Smooth muscle cells', 'Skeletal muscle cells',
-                'Cardiomyocytes', 'Schwann cells', 'ENS neurons', 'ENS glia', 'Hepatoblasts',
-                'Stellate cells', 'Intestinal epithelial cells', 'Mesothelial cells',
-                'Bronchiolar and alveolar epithelial cells', 'Ciliated epithelial cells',
-                'Adrenocortical cells', 'Erythroblasts', 'Chromaffin cells', 'Lymphoid cells', 'Myeloid cells',
-                'Sympathoblasts', 'Megakaryocytes', 'Fibroblast'
-            ]
-            ref = build_combined_reference(hdbca_p, fetal_p, origin_map, lineage_column='Main_cluster_name', lineages=fetal_lineages)
+            # B4: subset Cao by the CELLxGENE ontology cell_type via the origin map (NOT the
+            # native 'Main_cluster_name', which the Census file lacks). Keeps the non-neural
+            # off-target anchors; HDBCA supplies the neural core. RAM-capped via fetal_max_cells.
+            ref = build_combined_reference(
+                hdbca_p, fetal_p, origin_map,
+                cell_type_col=params.get('reference_cell_type_col', 'cell_type'),
+                keep_origins=tuple(params.get('reference_keep_origins',
+                                              ['mesoderm', 'endoderm', 'neural_crest'])),
+                fetal_max_cells=params.get('fetal_max_cells'),
+                allow_unmapped=params.get('allow_unmapped_origins', False),
+            )
             save_reference(ref, ref_out)
             
         log_step_end(logger, 1)
@@ -90,7 +127,10 @@ def main():
         ref_path = Path(paths['outputs']['reference'])
         query_path = Path(paths['datasets']['hnoca']['local_path'])
         model_out = Path(paths['outputs']['model'])
-        
+
+        # B1 guard: abort now (cheap, metadata-only) if the query is the stale Zenodo file.
+        assert_cellxgene_query_schema(query_path)
+
         # Train
         ref_model, query_model = run_training_pipeline(ref_path, query_path, model_out, params_config)
 
@@ -102,8 +142,15 @@ def main():
             out_path=out_dir / "integration_qc.json",
         )
 
-        # Load data for scoring (we only need raw query to annotate and save the final results)
-        query = ad.read_h5ad(query_path)
+        # Load query for annotation: X (log-norm) + obs + var only. Skip raw.X (~31GB of integer
+        # counts) -- it is never used here, and loading it alongside X + the reference risks the
+        # 251GB cgroup (the pilot's OOM ceiling). Backed read + reconstruct loads only what we need.
+        _q = ad.read_h5ad(query_path, backed='r')
+        query = ad.AnnData(X=_q.X[:], obs=_q.obs.copy(), var=_q.var.copy())
+        try:
+            _q.file.close()
+        except Exception:
+            pass
 
         # Empirical (non-uniform) label prior (Phase 1 / WS0b), off by default. Built from
         # the reference labels and applied identically in calibration and query scoring so
@@ -147,6 +194,7 @@ def main():
         for _attr in ('layers', 'obsm', 'obsp', 'varm', 'varp'):
             getattr(query, _attr).clear()
         query.uns = {}
+        query.raw = None  # never re-attach the ~31GB raw counts -- keeps the annotated file lean
         query_out = out_dir / "hnoca_annotated.h5ad"
         query.write_h5ad(query_out, compression='gzip')
         
@@ -181,7 +229,7 @@ def main():
         log_step_start(logger, 4, "Count Check (GREEN/YELLOW/RED)")
         
         query_out = out_dir / "hnoca_annotated.h5ad"
-        query = read_annotated_lean(query_out)
+        query = read_annotated_lean(query_out, obs_only=True)  # count gate is obs-only
 
         results = run_count_check(query, params_config)
         

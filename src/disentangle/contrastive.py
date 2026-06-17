@@ -97,6 +97,45 @@ def select_contrastive_indices(is_primary, is_organoid, is_ontarget):
     return background, target
 
 
+def _materialize_counts(adata, counts_layer: str = "counts", name: str = ""):
+    """Ensure ``adata.layers[counts_layer]`` holds integer raw counts.
+
+    contrastiveVI's NB/ZINB likelihood is mis-specified on normalized data, so we source the
+    counts (in order) from an existing integer count layer, an integer ``X``, or ``raw.X``
+    (reindexed onto the current var axis -- the CELLxGENE organoid keeps counts there). Raise
+    if none are integer rather than silently training on log-norm values.
+    """
+    import numpy as np
+    import scipy.sparse as sp
+
+    def _intfrac(X):
+        d = X.data if sp.issparse(X) else np.asarray(X).ravel()
+        d = d[:200000]
+        return float(np.mean(d == np.round(d))) if d.size else 1.0
+
+    layers = getattr(adata, "layers", {})
+    if counts_layer in layers and _intfrac(adata.layers[counts_layer]) > 0.999:
+        return adata
+    if _intfrac(adata.X) > 0.999 and float(adata.X.max()) > 30:
+        adata.layers[counts_layer] = adata.X.copy()
+        return adata
+    raw = getattr(adata, "raw", None)
+    if raw is not None:
+        rn = list(map(str, raw.var_names))
+        vn = list(map(str, adata.var_names))
+        if rn == vn:
+            rx = raw.X
+        else:
+            pos = {g: i for i, g in enumerate(rn)}
+            cols = [pos[g] for g in vn if g in pos]
+            rx = raw.X[:, cols] if len(cols) == adata.n_vars else None
+        if rx is not None and _intfrac(rx) > 0.999:
+            adata.layers[counts_layer] = rx.copy()
+            return adata
+    raise ValueError(f"[{name}] no integer raw counts (layer/X/raw.X) for contrastiveVI; "
+                     f"the NB/ZINB likelihood requires counts, not normalized data.")
+
+
 def build_contrastive_adata(primary, organoid, counts_layer: str = "counts",
                             source_key: str = "cs_source", ontarget_key: str = "cs_ontarget",
                             primary_ontarget=None, organoid_ontarget=None):
@@ -128,6 +167,11 @@ def build_contrastive_adata(primary, organoid, counts_layer: str = "counts",
     primary.obs[ontarget_key] = _ontarget_mask(primary, primary_ontarget)
     organoid.obs[ontarget_key] = _ontarget_mask(organoid, organoid_ontarget)
 
+    # Materialize integer counts per input BEFORE concat (organoid counts live in raw.X; primary
+    # counts in X). join="inner" then aligns the counts layer to the shared genes.
+    primary = _materialize_counts(primary, counts_layer, name="primary")
+    organoid = _materialize_counts(organoid, counts_layer, name="organoid")
+
     combined = ad.concat([primary, organoid], join="inner", label="cs_concat",
                          keys=["primary", "organoid"])
     logging.info(
@@ -135,10 +179,9 @@ def build_contrastive_adata(primary, organoid, counts_layer: str = "counts",
         combined.n_obs, primary.n_obs, organoid.n_obs, combined.n_vars,
     )
     if counts_layer not in combined.layers:
-        logging.warning(
-            "layers['%s'] missing on the combined object -- contrastiveVI needs raw counts; "
-            "set it before training (see ws0a_data_sourcing.md).", counts_layer,
-        )
+        raise ValueError(
+            f"layers['{counts_layer}'] missing after concat -- contrastiveVI needs raw counts. "
+            f"(Both inputs had counts materialized; a join mismatch dropped the layer.)")
     return combined
 
 

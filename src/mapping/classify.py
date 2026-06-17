@@ -38,6 +38,14 @@ ONTARGET_ORIGINS = {
 # unresolved and returns 'other'.
 KNOWN_ORIGINS = frozenset(ORIGIN_CATEGORIES)
 
+# Class labels classify_cell / classify_all may emit. 'qc_dropped' is assigned
+# only by classify_all (for cells filtered before scoring, see the 'scored'
+# column); the rest come from the per-cell decision tree in classify_cell.
+CLASS_LABELS = frozenset({
+    'clean_ontarget', 'poorly_diff_ontarget', 'true_offtarget', 'ambiguous',
+    'ambiguous_novel', 'unmapped', 'other', 'qc_dropped',
+})
+
 
 def classify_cell(origin: str, map_entropy: float, offmanifold: float, tau_H: float, tau_R: float, expected_germ_layer: str = 'neural') -> str:
     """
@@ -78,7 +86,15 @@ def classify_cell(origin: str, map_entropy: float, offmanifold: float, tau_H: fl
 
 
 def classify_all(query: ad.AnnData, tau_H: float, tau_R: float, expected_germ_layer: str = 'neural') -> pd.Series:
-    """Vectorized classification of all cells."""
+    """Vectorized classification of all cells.
+
+    If ``query.obs`` carries a boolean ``scored`` column (added upstream by
+    ``annotate_query``), cells with ``scored == False`` were QC-dropped (e.g.
+    low-count) before scArches scoring and never received a real prediction.
+    They are labeled ``'qc_dropped'`` -- a class DISTINCT from ``'unmapped'`` --
+    so QC-filtered cells are not conflated with genuinely unmappable cells. The
+    column is optional: when absent, classification is unchanged.
+    """
     logging.info(f"Classifying all query cells (expected_germ_layer={expected_germ_layer})...")
 
     def apply_class(row):
@@ -92,6 +108,12 @@ def classify_all(query: ad.AnnData, tau_H: float, tau_R: float, expected_germ_la
         )
 
     classes = query.obs.apply(apply_class, axis=1)
+
+    # QC-dropped cells (filtered before scoring) get a distinct label, overriding
+    # whatever the decision tree returned (typically 'unmapped' for their NaN scores).
+    if 'scored' in query.obs.columns:
+        qc_dropped_mask = ~query.obs['scored'].astype(bool)
+        classes[qc_dropped_mask] = 'qc_dropped'
 
     logging.info("Class distribution:")
     dist = classes.value_counts()

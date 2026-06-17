@@ -1,5 +1,17 @@
 scanpy>=1.10
-cellxgene-census
+anndata>=0.10
+scikit-learn
+scikit-misc  # required by scanpy highly_variable_genes(flavor="seurat_v3") -- the count-based HVG
+scipy
+numpy
+# Pinned: the ContrastiveVI + scANVI/scArches API contract holds only in 1.3.3 (1.4.x needs
+# python>=3.11 and changes signatures). torch is NOT listed here -- install it separately with
+# the right build: CPU  -> pip install torch --index-url https://download.pytorch.org/whl/cpu
+#                    GPU -> pip install torch   (default PyPI CUDA wheel)
+scvi-tools==1.3.3
+# Census client must match the hardcoded census_version "2025-11-08" LTS (needs tiledbsoma>=1.15.3).
+cellxgene-census==1.17.*
+tiledbsoma>=1.15.3
 requests
 tqdm
 pyyaml
