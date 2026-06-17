@@ -11,6 +11,18 @@ The raw single-cell atlases are **not tracked in git** (they are tens of GB; see
 
 Local paths are configured in [`config/paths.yaml`](../config/paths.yaml).
 
+## Phase 2 (cross-germ-layer) — not yet sourced
+
+The cross-germ-layer expansion adds two more organoid systems. They are registered as
+placeholders in [`config/paths.yaml`](../config/paths.yaml) (`status: phase2_not_sourced`)
+with their germ layer but **no collection IDs yet** — locating them is the WS0a task, and
+the IDs are deliberately left as `TODO` rather than guessed.
+
+| File | Dataset | Germ layer | Status |
+|------|---------|-----------|--------|
+| `heoca.h5ad` | Human Endoderm Organoid Cell Atlas (HEOCA) | endoderm | not sourced (ID TODO) |
+| `kidney_organoid.h5ad` | Kidney organoid benchmark | mesoderm | not sourced (ID TODO) |
+
 ## Download
 
 ```bash

@@ -121,15 +121,24 @@ def main():
         check("query file exists", False, str(query_path))
     else:
         with h5py.File(query_path, "r") as f:
-            # gene namespace: ensembl column
+            # gene namespace: an 'ensembl' var column OR var_names already Ensembl (CELLxGENE schema).
             var = f["var"]
             vcols = _h5_columns(var)
-            check("query has 'ensembl' var column (for remap)", "ensembl" in vcols,
-                  f"var cols: {vcols[:8]}")
-            if "ensembl" not in vcols:
-                blockers.append("query lacks 'ensembl' var column -> gene remap impossible")
+            idx_key = var.attrs.get("_index", "_index")
+            if isinstance(idx_key, bytes):
+                idx_key = idx_key.decode()
+            try:
+                vnames = np.asarray(var[idx_key][:500]).astype(str)
+                frac_ensg = float(np.mean(np.char.startswith(vnames, "ENSG"))) if vnames.size else 0.0
+            except Exception:
+                frac_ensg = 0.0
+            ensembl_ok = ("ensembl" in vcols) or (frac_ensg > 0.5)
+            check("query genes Ensembl-resolvable ('ensembl' col or ENSG var_names)", ensembl_ok,
+                  f"ensembl_col={'ensembl' in vcols} ENSG_var_names={frac_ensg:.2f}")
+            if not ensembl_ok:
+                blockers.append("query genes neither Ensembl-indexed nor have an 'ensembl' column -> remap impossible")
 
-            # raw counts: an integer count layer (e.g. counts_lengthnorm) or integer X
+            # raw counts: an integer count layer, OR integer X, OR integer raw.X (CELLxGENE schema).
             layers = list(f["layers"].keys()) if "layers" in f else []
             count_layer = None
             for lk in ("counts", "counts_lengthnorm", "raw_counts", "umi_counts", "X_counts"):
@@ -142,12 +151,22 @@ def main():
                         break
             xcnt = _is_int_counts_sample(f)
             x_is_counts = xcnt["frac_integer"] is not None and xcnt["frac_integer"] > 0.999 and (xcnt["max"] or 0) > 30
-            has_raw = "raw" in f
-            ok_counts = (count_layer is not None) or x_is_counts
-            check("query raw counts available (integer count layer or X)", ok_counts,
-                  f"count_layer={count_layer} layers={layers} X_frac_int={xcnt['frac_integer']} has_.raw={has_raw}")
+            raw_is_counts = False
+            if "raw" in f and "X" in f["raw"]:
+                rx = f["raw"]["X"]
+                rdata = rx["data"] if isinstance(rx, h5py.Group) and "data" in rx else rx
+                try:
+                    rd = np.asarray(rdata[:200000]).astype("float64")
+                    raw_is_counts = bool(rd.size and np.all(rd >= 0) and np.allclose(rd, np.round(rd)) and (rd.max() > 30))
+                except Exception:
+                    raw_is_counts = False
+            ok_counts = (count_layer is not None) or x_is_counts or raw_is_counts
+            check("query raw counts available (count layer, X, or raw.X)", ok_counts,
+                  f"count_layer={count_layer} X_frac_int={xcnt['frac_integer']} raw.X_counts={raw_is_counts}")
             if not ok_counts:
-                print("       NOTE: will fall back to approximate 283x rescale.")
+                blockers.append("query has no integer raw counts (layer/X/raw.X) -> ZINB mis-specified")
+            elif raw_is_counts and not (count_layer or x_is_counts):
+                print("       (counts will be promoted from raw.X by _use_query_raw_counts)")
 
             # batch column for scArches
             obs = f["obs"]
@@ -159,9 +178,10 @@ def main():
                 if not cand:
                     print("       NOTE: will assign a single 'hnoca_query' batch (coarse but valid).")
 
-            # protocol column for the count gate
-            prot = [c for c in ('protocol','assay','bio_sample','sample','id','dataset_id','batch') if c in ocols]
-            check("query has a protocol-like column for count gate", len(prot) > 0,
+            # protocol column for the count gate (must NOT be 'batch' -> 395 micro-batches make
+            # GREEN unreachable; the CELLxGENE per-study axes are assay_differentiation/publication).
+            prot = [c for c in ('assay_differentiation','publication','protocol','assay') if c in ocols]
+            check("query has a protocol-like column for count gate (study-level)", len(prot) > 0,
                   f"candidates: {prot}")
             if not prot:
                 print("       NOTE: count gate will collapse to 1 'unknown' protocol -> max YELLOW.")

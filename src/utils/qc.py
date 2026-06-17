@@ -67,9 +67,11 @@ def evaluate_integration(ref_model, adata, batch_key: str, label_key: str = "cel
     batch = sub.obs[batch_key].astype(str).values
     label = sub.obs[label_key].astype(str).values
 
-    # Integrated latent (compute full once, then subset -> avoids setup-transfer issues)
+    # Integrated latent: encode ONLY the subsample (~80x cheaper than a full-data
+    # forward pass over the whole reference). get_latent_representation preserves
+    # sub's row order, which already equals adata[idx], so no re-slicing is needed.
     logging.info(f"[Integration QC] evaluating {len(idx)} cells ({sub.obs[batch_key].nunique()} batches)...")
-    Z_int = ref_model.get_latent_representation()[idx]
+    Z_int = ref_model.get_latent_representation(sub)
 
     # Unintegrated baseline: standard log1p-CP10k -> scale -> PCA on the same cells
     base = sub.copy()

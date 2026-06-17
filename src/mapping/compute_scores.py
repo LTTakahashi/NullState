@@ -8,12 +8,48 @@ import json
 from pathlib import Path
 import logging
 
-def compute_mapping_entropy(query_model: scvi.model.SCANVI, query: ad.AnnData) -> np.ndarray:
-    """Computes mapping entropy from soft label predictions."""
+def build_empirical_label_prior(labels: pd.Series) -> pd.Series:
+    """Empirical (non-uniform) class prior from reference label frequencies.
+
+    Returns a Series indexed by label name summing to 1, used to correct scANVI's
+    uniform-prior posterior toward the true class frequencies (Phase 1 / WS0b) so that
+    rare types are not over-predicted. Labels absent here are floored (never zeroed)
+    when the prior is applied; see :func:`_apply_label_prior`.
+    """
+    return labels.astype(str).value_counts(normalize=True)
+
+
+def _apply_label_prior(soft: pd.DataFrame, class_prior: pd.Series) -> pd.DataFrame:
+    """Reweight soft posteriors by an empirical prior and renormalize per cell.
+
+    posterior_corrected proportional to posterior_uniform * prior (logit-adjustment).
+    Any label column missing from the prior gets the smallest observed prior as a
+    floor (down-weighted, not dropped); each row is renormalized to sum to 1.
+    """
+    floor = float(class_prior[class_prior > 0].min()) if (class_prior > 0).any() else 1e-6
+    prior = class_prior.reindex(soft.columns).fillna(floor).clip(lower=floor)
+    weighted = soft.mul(prior.values, axis=1)
+    row_sums = weighted.sum(axis=1).replace(0, np.nan)
+    corrected = weighted.div(row_sums, axis=0).fillna(1.0 / soft.shape[1])
+    return corrected
+
+
+def compute_mapping_entropy(query_model: scvi.model.SCANVI, query: ad.AnnData,
+                            class_prior: pd.Series = None) -> np.ndarray:
+    """Computes mapping entropy from soft label predictions.
+
+    If ``class_prior`` is provided (Phase 1 / WS0b empirical-prior correction), the soft
+    posteriors are reweighted by it and renormalized before entropy is computed, so the
+    same correction flows into both threshold calibration and query scoring. With
+    ``class_prior=None`` the behavior is identical to the validated uniform-prior pilot.
+    """
     logging.info("Predicting soft labels for query...")
     soft = query_model.predict(query, soft=True)
+    if class_prior is not None:
+        logging.info("Applying empirical label-prior correction to soft predictions...")
+        soft = _apply_label_prior(soft, class_prior)
     logging.info("Computing Shannon entropy...")
-    entropy = soft.apply(lambda r: scipy.stats.entropy(r), axis=1).values
+    entropy = scipy.stats.entropy(soft.to_numpy(), axis=1)
     return entropy, soft
 
 def compute_offmanifold_score(ref_model: scvi.model.SCANVI, ref: ad.AnnData, query_model: scvi.model.SCANVI, query: ad.AnnData, k: int = 15) -> np.ndarray:
@@ -29,20 +65,33 @@ def compute_offmanifold_score(ref_model: scvi.model.SCANVI, ref: ad.AnnData, que
     distances = nn.kneighbors(Zq)[0].mean(axis=1)
     return distances
 
-def calibrate_thresholds(ref_model: scvi.model.SCANVI, ref: ad.AnnData, holdout_fraction: float = 0.10, tau_H_percentile: float = 95, tau_R_percentile: float = 99, k: int = 15) -> dict:
-    """Calibrates thresholds on a held-out reference set."""
+def calibrate_thresholds(ref_model: scvi.model.SCANVI, ref: ad.AnnData, holdout_fraction: float = 0.10, tau_H_percentile: float = 95, tau_R_percentile: float = 99, k: int = 15, class_prior: pd.Series = None) -> dict:
+    """Calibrates thresholds on a held-out reference set.
+
+    ``class_prior`` (Phase 1 / WS0b) must be the same prior used for query scoring so
+    that tau_H is calibrated on the identically-corrected entropy distribution; pass
+    None to keep the validated uniform-prior calibration.
+    """
     logging.info(f"Calibrating thresholds using {holdout_fraction*100}% of reference cells...")
-    
+
     n_holdout = int(ref.n_obs * holdout_fraction)
     # Basic random holdout
     np.random.seed(42)
     holdout_indices = np.random.choice(ref.n_obs, n_holdout, replace=False)
     ref_holdout = ref[holdout_indices].copy()
-    
+
+    # Complementary train split (reference MINUS holdout). The off-manifold kNN must be
+    # fit on this train subset only; fitting on the full reference would let each holdout
+    # cell find ITSELF (distance 0), deflating tau_R and inflating 'ambiguous_novel' at
+    # scoring time. This mirrors the scoring-time asymmetry: the query is never in the fit set.
+    train_mask = np.ones(ref.n_obs, dtype=bool)
+    train_mask[holdout_indices] = False
+    ref_train = ref[train_mask].copy()
+
     # Compute on holdout
     # We use the ref_model for both as this is purely reference data.
-    entropy, _ = compute_mapping_entropy(ref_model, ref_holdout)
-    offmanifold = compute_offmanifold_score(ref_model, ref, ref_model, ref_holdout, k=k)
+    entropy, _ = compute_mapping_entropy(ref_model, ref_holdout, class_prior=class_prior)
+    offmanifold = compute_offmanifold_score(ref_model, ref_train, ref_model, ref_holdout, k=k)
     
     tau_H = np.percentile(entropy, tau_H_percentile)
     tau_R = np.percentile(offmanifold, tau_R_percentile)
@@ -60,6 +109,13 @@ def calibrate_thresholds(ref_model: scvi.model.SCANVI, ref: ad.AnnData, holdout_
 def annotate_query(query: ad.AnnData, query_model: scvi.model.SCANVI, entropy: np.ndarray, offmanifold: np.ndarray, origin_map: dict, soft: pd.DataFrame) -> ad.AnnData:
     """Adds mapping entropy, off-manifold scores, and predicted origins to the query."""
     logging.info("Annotating query AnnData...")
+    # Tag which cells were actually scored vs dropped upstream (e.g. low-count cells
+    # filtered before scArches). Lets the classifier distinguish QC-dropped cells from
+    # genuinely unmappable ones.
+    query.obs['scored'] = query.obs_names.isin(soft.index)
+    n_unscored = int(query.n_obs - query.obs['scored'].sum())
+    logging.info(f"Scored {int(query.obs['scored'].sum())} / {query.n_obs} query cells "
+                 f"({n_unscored} unscored / QC-dropped upstream).")
     query.obs['map_entropy'] = pd.Series(entropy, index=soft.index)
     query.obs['offmanifold'] = pd.Series(offmanifold, index=soft.index)
     

@@ -1,10 +1,15 @@
-import numpy as np
-import pandas as pd
-import anndata as ad
-from pathlib import Path
+from __future__ import annotations
+
 import json
 import logging
-import yaml
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import numpy as np
+import pandas as pd
+
+if TYPE_CHECKING:  # anndata appears only in type hints; runtime is duck-typed on .obs/.X,
+    import anndata as ad  # so the pure helpers import with just numpy + pandas installed.
 
 def _subsample_idx(labels: np.ndarray, keep_types: set, max_per_type: int, seed: int = 0) -> np.ndarray:
     """Return sorted row indices: up to `max_per_type` cells per label in `keep_types`."""
@@ -73,8 +78,14 @@ def evaluate_go_nogo(cosine_matrix: pd.DataFrame, threshold: float = 0.70) -> di
     """Evaluates the GO/NO-GO gate for single z_iv."""
     # Extract upper triangle excluding diagonal
     upper_tri = cosine_matrix.where(np.triu(np.ones(cosine_matrix.shape), k=1).astype(bool))
-    mean_cos = upper_tri.mean().mean()
-    
+    # True mean of the pairwise cosines. NB: `.mean().mean()` averages the column means, which
+    # is NOT the mean of the entries when the triangle is uneven -- `.stack()` (drops NaN) is.
+    mean_cos = upper_tri.stack().mean()
+    # A NaN mean cosine (degenerate / zero-norm dish vectors) must never silently become a
+    # NO-GO scientific conclusion -- fail loudly instead.
+    if not np.isfinite(mean_cos):
+        raise ValueError("dish-vector mean cosine is not finite (degenerate input)")
+
     decision = "GO" if mean_cos > threshold else "NO-GO"
     
     return {
@@ -87,6 +98,7 @@ def evaluate_go_nogo(cosine_matrix: pd.DataFrame, threshold: float = 0.70) -> di
     }
 
 def run_dish_vector_test(query: ad.AnnData, ref: ad.AnnData, gene_sets: dict[str, set], config_path: str = 'config/params.yaml') -> dict:
+    import yaml  # lazy: keeps the module importable (pure helpers) without pyyaml
     with open(config_path, 'r') as f:
         params = yaml.safe_load(f)
         
@@ -98,16 +110,18 @@ def run_dish_vector_test(query: ad.AnnData, ref: ad.AnnData, gene_sets: dict[str
     query = query[query.obs['pilot_class'] == 'clean_ontarget'].copy()
     logging.info(f"Dish vectors: restricted query to {query.n_obs} clean_ontarget cells.")
 
-    # The annotated query is indexed by gene symbol while the reference uses Ensembl
-    # IDs. Remap the query to Ensembl so gene matching recovers ~74% of genes instead
-    # of the ~15% that match by symbol coincidence. (Mirrors the model-side remap.)
-    if 'ensembl' in query.var.columns:
-        ens = query.var['ensembl'].astype(str)
-        keep = ens.str.startswith('ENSG').values
-        query = query[:, keep].copy()
-        query.var_names = query.var['ensembl'].astype(str).values
-        query = query[:, ~query.var_names.duplicated()].copy()
-        logging.info(f"Remapped query to Ensembl IDs for dish vectors ({query.n_vars} genes).")
+    # The CELLxGENE HNOCA query is ALREADY indexed by Ensembl IDs (ENSG...), possibly with
+    # version suffixes (e.g. ENSG00000141510.16). The reference is Ensembl-indexed but
+    # unversioned, so strip the version suffix to make var_names intersect. (Mirrors
+    # src/mapping/train_scanvi.py `_remap_query_to_ensembl`.)
+    vn = pd.Index(query.var_names).astype(str)
+    if vn.str.startswith('ENSG').mean() > 0.5:
+        query.var_names = vn.str.split('.').str[0].values
+        # drop duplicates created by the strip
+        dup = pd.Index(query.var_names).duplicated()
+        if dup.any():
+            query = query[:, ~dup].copy()
+        logging.info(f"Stripped Ensembl version suffixes on query var_names for dish vectors ({query.n_vars} genes).")
 
     # Identify common types
     q_types = set(query.obs['pred_label'].unique())
@@ -126,23 +140,29 @@ def run_dish_vector_test(query: ad.AnnData, ref: ad.AnnData, gene_sets: dict[str
                  f"-> ref {ref.n_obs}, query {query.n_obs} cells across {len(common_types)} types.")
 
     common_vars = query.var_names.intersection(ref.var_names)
+    if len(common_vars) < 500:
+        return {"error": f"dish-vector gene overlap too small ({len(common_vars)}); cannot compute"}
+
+    # IMPORTANT: dish vectors are a mean-difference and the gate relies on the cosine
+    # between those differences, so query and ref MUST share a normalization domain. The
+    # reference X is raw counts; normalize it to log1p-CP10k over its FULL gene panel
+    # (BEFORE subsetting to common_vars) so its CP10k denominator spans the same domain as
+    # the (full-panel CP10k-log1p) query. Normalizing after subsetting would compute the
+    # denominator over only the ~74% overlapping genes and bias the cosine. This assumes
+    # the query is full-panel CP10k-log1p -- verify before trusting the GO/NO-GO decision.
+    import scipy.sparse as sp
+    ref_is_counts = bool(sp.issparse(ref.X)) and float(ref.X.max()) > 50
+    if ref_is_counts:
+        logging.warning("Reference X is raw counts; applying full-panel log1p-CP10k to match query "
+                        "space for dish vectors. Confirm the query uses the same normalization.")
+        sc = __import__('scanpy')
+        sc.pp.normalize_total(ref, target_sum=1e4)
+        sc.pp.log1p(ref)
+
     logging.info(f"Subsetting query and ref to {len(common_vars)} common genes for dish vectors...")
     query = query[:, common_vars].copy()
     ref = ref[:, common_vars].copy()
 
-    # IMPORTANT: dish vectors are a mean-difference, so query and ref MUST be in the
-    # same expression space. The reference X is raw counts; normalize it to log1p-CP10k
-    # to match the (log-normalized) query. This assumes the query is CP10k-log1p — verify
-    # the query's normalization before trusting the GO/NO-GO decision.
-    import scipy.sparse as sp
-    ref_is_counts = bool(sp.issparse(ref.X)) and float(ref.X.max()) > 50
-    if ref_is_counts:
-        logging.warning("Reference X is raw counts; applying log1p-CP10k to match query space "
-                        "for dish vectors. Confirm the query uses the same normalization.")
-        sc = __import__('scanpy')
-        sc.pp.normalize_total(ref, target_sum=1e4)
-        sc.pp.log1p(ref)
-    
     logging.info(f"Computing dish vectors for {len(common_types)} common types...")
     dish_vectors = {}
     for t in common_types:
@@ -150,8 +170,8 @@ def run_dish_vector_test(query: ad.AnnData, ref: ad.AnnData, gene_sets: dict[str
         if dv is not None:
             dish_vectors[t] = dv
             
-    if not dish_vectors:
-        return {"error": "No valid dish vectors could be computed."}
+    if len(dish_vectors) < 2:
+        return {"error": f"need >=2 dish vectors, got {len(dish_vectors)}"}
         
     cos_matrix = compute_cosine_matrix(dish_vectors)
     gate_result = evaluate_go_nogo(cos_matrix, threshold)

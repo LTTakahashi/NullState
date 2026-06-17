@@ -14,7 +14,7 @@ toward shared default states, and a subset that is lineage-bound.
 
 ## Specific Aims
 1. **Construct a harmonized cross-germ-layer reference space and off-target ontology.**
-2. **Disentangle the *in-vitro* stress signature from lineage biology** by subspace separation.
+2. **Disentangle the *in-vitro* stress signature from lineage biology** by contrastive subspace separation.
 3. **Characterize and validate the geometry of off-target convergence.**
 
 ## The HNOCA Pilot
