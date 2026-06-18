@@ -39,10 +39,14 @@ bins = np.linspace(0, hi, 60)
 for x, c, lab in [(ref_self, C_REF, "independent ref (self)"), (cln, C_CLEAN, "clean neural (organoid)"),
                   (amb, C_AMB, "ambiguous-novel neural")]:
     axa.hist(x, bins=bins, density=True, histtype="stepfilled", alpha=0.45, color=c, lw=1.1, edgecolor=c, label=lab)
+ymax = max(np.histogram(ref_self, bins=bins, density=True)[0].max(),
+           np.histogram(amb, bins=bins, density=True)[0].max()) * 1.18
+axa.set_ylim(0, ymax)
 axa.axvline(c50, color=C_CLEAN, ls="--", lw=0.9); axa.axvline(c95, color=C_CLEAN, ls=":", lw=0.9)
-axa.text(c95, axa.get_ylim()[1] * 0.96, "  clean p95", fontsize=6.0, color=C_CLEAN, va="top")
+axa.text(c50, ymax * 0.40, "clean median", rotation=90, fontsize=5.6, color=C_CLEAN, va="center", ha="right")
+axa.text(c95, ymax * 0.40, "clean p95", rotation=90, fontsize=5.6, color=C_CLEAN, va="center", ha="right")
 axa.set_xlabel("off-manifold score vs independent cortex atlas  (kNN distance)")
-axa.set_ylabel("density"); axa.legend(frameon=False, loc="upper right")
+axa.set_ylabel("density"); axa.legend(frameon=False, loc="upper right", fontsize=6.2)
 axa.set_title("All organoid cells displaced; ambiguous-novel further out", fontsize=8)
 axa.text(-0.12, 1.05, "a", transform=axa.transAxes, fontsize=11, fontweight="bold", va="top")
 

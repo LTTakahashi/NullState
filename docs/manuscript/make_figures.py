@@ -203,10 +203,12 @@ def fig2():
     axc.bar(x - w/2, [g["ilisi_pca"], g["clisi_pca"]], w, label="unintegrated (PCA)", color="#bdbdbd", edgecolor="white")
     axc.bar(x + w/2, [g["ilisi_int"], g["clisi_int"]], w, label="scVI integrated", color=ACC, edgecolor="white")
     axc.set_xticks(x); axc.set_xticklabels(["batch iLISI\n(mixing ↑ better)", "label cLISI\n(biology ~preserved)"], fontsize=6.8)
-    axc.set_ylabel("LISI"); axc.legend(frameon=False, loc="upper left", fontsize=6.2)
-    axc.set_title("Reference harmonization", fontsize=8); panel_label(axc, dx=-0.2)
+    axc.set_ylabel("LISI"); axc.set_ylim(0, max(g["ilisi_int"], g["ilisi_pca"]) * 1.32)
+    axc.legend(frameon=False, loc="upper center", fontsize=6.0, ncol=2, columnspacing=1.0,
+               handlelength=1.2, bbox_to_anchor=(0.5, 1.02))
+    axc.set_title("Reference harmonization", fontsize=8, pad=12); panel_label(axc, dx=-0.2)
     for xi, a, b in zip(x, [g["ilisi_pca"], g["clisi_pca"]], [g["ilisi_int"], g["clisi_int"]]):
-        axc.text(xi - w/2, a+0.05, f"{a:.2f}", ha="center", fontsize=6); axc.text(xi + w/2, b+0.05, f"{b:.2f}", ha="center", fontsize=6)
+        axc.text(xi - w/2, a+0.06, f"{a:.2f}", ha="center", fontsize=6); axc.text(xi + w/2, b+0.06, f"{b:.2f}", ha="center", fontsize=6)
     # (d) gates
     axd = fig.add_subplot(gs[1, 1]); axd.axis("off"); axd.set_xlim(0, 10); axd.set_ylim(0, 10)
     rows = [("Gate A — definition", "PASS", "#2ca25f", "off-target schema sane"),
@@ -274,9 +276,12 @@ def fig3():
         sc.pp.neighbors(cl, use_rep="X_emb", n_neighbors=15)
         sc.tl.leiden(cl, resolution=1.0, flavor="igraph", n_iterations=2, directed=False)
         per = cl.obs.groupby("leiden")["amb"].mean().to_numpy()
-        axd.hist(per, bins=np.linspace(0, 1, 16), color="#756bb1", edgecolor="white")
+        counts, _, _ = axd.hist(per, bins=np.linspace(0, 1, 16), color="#756bb1", edgecolor="white")
+        axd.set_ylim(0, counts.max() * 1.30)
         axd.axvline(d["d4_overall"], color="#333", ls="--", lw=1.0)
-        axd.text(d["d4_overall"]+0.02, axd.get_ylim()[1]*0.9, "overall\n0.55", fontsize=6.0)
+        axd.annotate("overall 0.55", xy=(d["d4_overall"], counts.max() * 1.02),
+                     xytext=(d["d4_overall"] + 0.16, counts.max() * 1.20), fontsize=6.0, color="#333",
+                     ha="left", va="center", arrowprops=dict(arrowstyle="-", lw=0.6, color="#888"))
         axd.set_xlabel("per-cluster ambiguous-novel fraction"); axd.set_ylabel("Leiden clusters")
     except Exception as e:
         print("D4 recompute failed, summary bars:", e)
