@@ -211,9 +211,9 @@ def fig2():
         axc.text(xi - w/2, a+0.06, f"{a:.2f}", ha="center", fontsize=6); axc.text(xi + w/2, b+0.06, f"{b:.2f}", ha="center", fontsize=6)
     # (d) gates
     axd = fig.add_subplot(gs[1, 1]); axd.axis("off"); axd.set_xlim(0, 10); axd.set_ylim(0, 10)
-    rows = [("Gate A — definition", "PASS", "#2ca25f", "off-target schema sane"),
-            ("Gate B — dish vector", "GO", "#2ca25f", f"cos = {NUMS['gates']['B_cosine']:.3f} > {NUMS['gates']['B_threshold']:.2f}"),
-            ("Gate C — count power", "GREEN", "#2ca25f", f"{NUMS['classes']['true_offtarget']:,} true-off-target")]
+    rows = [("Gate A: definition", "PASS", "#2ca25f", "off-target schema sane"),
+            ("Gate B: dish vector", "GO", "#2ca25f", f"cos = {NUMS['gates']['B_cosine']:.3f} > {NUMS['gates']['B_threshold']:.2f}"),
+            ("Gate C: count power", "GREEN", "#2ca25f", f"{NUMS['classes']['true_offtarget']:,} true-off-target")]
     axd.set_title("Feasibility gates", fontsize=8)
     for i, (name, status, col, sub) in enumerate(rows):
         yy = 8.2 - i*2.7
