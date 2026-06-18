@@ -65,11 +65,14 @@ differences combined---is pervasive and encoder-visible, not a separable nuisanc
 state the result methodologically (shared-latent methods cannot yield a source-invariant lineage axis
 here) and read the specifically in-vitro biology from the stress diagnostics rather than from the
 adversary. Finally, on the \emph{non-neural} contaminant populations---where, unlike the
-reference-limited neural compartment, we are statistically powered---we show the method recovers real
-lineage geometry: all pairwise distances clear a matched-$N$ noise floor ($14$--$105\times$) and are
-biologically ordered, the two myogenic populations closest. Aim~3 thus demonstrates on the powered
-compartment what Aim~2's diagnosis implies for the neural one. NullState provides a deployable off-target quality axis
-for organoid studies and a precise account of when latent disentanglement is and is not attainable.
+reference-limited neural compartment, we are statistically powered---we show the geometry method works as
+an instrument: pairwise distances clear a matched-$N$ noise floor ($14$--$105\times$) and their
+\emph{rank order} recovers the primary lineage geometry (distance-matrix $r=0.90$). A direct test,
+however, finds the per-lineage source offsets are not constant (mutual cosine $0.15$), so the individual
+distances are confounded rather than clean lineage metrics---a validated ordering, not yet a clean
+geometry. NullState thus provides a reference-anchored, \emph{comparative} off-target measurement---to be
+read against the reference's own domain, not as an absolute fidelity score---and an identifiability
+boundary for when latent calibration without anchoring is attainable at all.
 \end{abstract}
 
 \vspace{0.5em}
@@ -248,8 +251,12 @@ dominant axis is established not by the adversary but by the stress diagnostics 
 (Fig.~\ref{fig:diag}). Second, the donor-keyed integration used for mapping does not correct the far
 deeper organoid-versus-primary divide, so that divide is precisely what the background latent inherits.
 We accordingly state the negative result methodologically and read its biology from Aim~2's signatures.
-This delimits where ``calibration without anchoring'' can and cannot be applied and motivates
-encoder-side or distributional alternatives.
+The substantive claim is therefore not that a domain gap exists---that is assumed---but a sharper,
+identifiability-flavoured one: shared-latent calibration \emph{without anchoring} is feasible only where
+the two domains share an overlap region in which a common lineage axis is even defined, and the
+fetal-versus-organoid regime lies past that boundary. Naming this boundary condition---rather than
+restating the bare fact that source is decodable---is the contribution, and it identifies encoder-side
+or distributional methods as the only routes that could cross it.
 
 \subsection{Off-target populations occupy distinct, biologically coherent geometry}
 Having quantified the largely neural off-manifold compartment in Aim~2, we turn to the part of the
@@ -262,10 +269,22 @@ adrenal-cortical cells---instead map to a \emph{complete} fetal-body reference a
 thousands, making them the compartment on which the geometry method can be put to a fair test. The
 disentanglement failure does not invalidate the geometry of these populations relative to one another.
 Aim~3 compares off-target \emph{organoid} populations against \emph{each
-other}; because all such cells share the same organoid-versus-primary offset in \zlin, that offset is a
+other}; if all such cells share the same organoid-versus-primary offset $c$ in \zlin, that offset is a
 constant translation that cancels exactly in pairwise sliced-Wasserstein distances
-($W(\mathcal{A}{+}c,\mathcal{B}{+}c)=W(\mathcal{A},\mathcal{B})$) \citep{bonneel2015sliced}. The
-contamination shifts all populations together and therefore does not distort their relative structure.
+($W(\mathcal{A}{+}c,\mathcal{B}{+}c)=W(\mathcal{A},\mathcal{B})$) \citep{bonneel2015sliced}, so the
+shared contamination does not distort relative structure.
+
+This cancellation rests on one explicit assumption that we state plainly because the entire Aim~3 result
+depends on it: the source offset $c$ must be approximately the \emph{same} vector across the populations
+compared. That constancy is not guaranteed, and it is not the constancy Gate~B verified---Gate~B
+established offset-consistency among \emph{on-target neural} cell types (cosine $0.855$), whereas the
+cancellation is applied to \emph{off-target non-neural} populations, a different set of cells. The stress
+biology cuts against strict constancy: if the unfolded-protein-response component scales with secretory
+demand, the offset should be larger for secretory lineages (e.g., adrenal-cortical) than for muscle, so
+part of a recovered ``lineage'' distance could in principle be differential-stress distance. Rather than
+rely on the constant-offset assumption, we tested it directly---measuring the per-lineage dish vector
+(organoid minus primary) for each of the four lineages and asking whether they coincide (Methods)---and
+report the outcome with the distances below, where it bounds how the geometry may be read.
 
 We computed pairwise lineage distances among the true off-target populations, controlling for sample
 size by a rarefaction-derived minimum ($N_{\min}=2000$) and a matched-$N$ self-distance noise floor; a
@@ -275,12 +294,24 @@ Of the $17$ off-target populations, four \emph{non-neural contaminant} lineages 
 $2{,}534$). All six pairwise
 comparisons are real differences, each clearing the noise floor by $14$ to $105\times$
 ($W$ from $0.32$ to $0.99$ against floors of $0.007$--$0.026$); the remaining $130$ small-$N$
-comparisons are correctly returned as underpowered. Crucially, the recovered geometry is
-\emph{biologically ordered}: the two myogenic populations (cardiac and skeletal muscle) are closest
-($W=0.32$), fibroblast is most distant from the muscle populations ($W\approx0.96$--$0.99$), and the
-steroidogenic adrenal-cortical population sits between them, exactly as a lineage embedding---not a
-source-confounded one---should arrange them (Fig.~\ref{fig:aim3}a,d). Off-target geometry is thus both
-statistically real and lineage-interpretable.
+comparisons are correctly returned as underpowered.
+
+The direct test, however, shows the constant-offset assumption does \emph{not} hold for these
+populations. The per-lineage dish vectors are mutually inconsistent (mean pairwise cosine $0.15$ versus
+$0.855$ for on-target neural types; only the two myogenic lineages align, at $0.55$), and each pairwise
+offset difference is comparable in magnitude to the lineage separation itself (ratio $\approx\!1$). The
+individual distances are thus confounded by a lineage-dependent offset and cannot be read as clean
+lineage metrics---the inter-lineage \emph{direction} survives only weakly (cosine $0.29$ between the
+organoid and primary inter-lineage vectors). What \emph{does} survive is the rank structure: across the
+six pairs the organoid and primary pairwise-distance matrices correlate $r=0.90$, so the metric still
+orders the lineages as the primary reference does (the two myogenic populations closest at $W=0.32$,
+fibroblast most distant at $W\approx0.96$--$0.99$, the steroidogenic adrenal-cortical population between;
+Fig.~\ref{fig:aim3}a,d). We therefore present Aim~3 as a \emph{capability with a reference-validated
+ordering, not a clean lineage geometry}: the instrument produces statistically real, floor-clearing
+distances whose \emph{rank} recovers primary lineage structure, whereas recovering true per-pair lineage
+distances would require per-lineage offset removal or a matched-primary embedding. Ordering grossly
+distinct lineages is in any case a low-bar capability check rather than a biological finding; its value
+is to license turning the same construction on questions whose answer is not known in advance (below).
 
 % =====================================================================
 \section{Discussion}
@@ -291,9 +322,15 @@ measurement. Three results have practical consequences. First, the off-manifold 
 program, each separately actionable. The reference-gap component argues for extending fetal references
 beyond the first trimester and beyond cortex before off-manifold scores are interpreted as ``aberrant''
 for non-cortical protocols; the stress component, intensifying with age and metabolic load and
-mirroring \citet{bhaduri2020stress}, provides a per-cell, deployable readout for evaluating
-stress-mitigation strategies. The $\sim$240-fold protocol spread additionally yields a concrete,
-reference-anchored fidelity ranking across organoid platforms.
+mirroring \citet{bhaduri2020stress}, provides a per-cell readout for evaluating
+stress-mitigation strategies. The $\sim$240-fold protocol spread is tempting to read as a fidelity
+ranking, and we caution explicitly against that misuse: off-manifold burden measures distance from a
+\emph{first-trimester, cortex-rich} reference, so a choroid-plexus protocol at $96.8\%$ off-manifold is
+largely \emph{reference-absent}---non-cortical and later than HDBCA covers---rather than $96.8\%$
+aberrant. The axis ranks ``how far from early cortex,'' conflating genuine in-vitro defect with region
+and stage mismatch; it is a fidelity axis only for protocols that target the reference's own domain, or
+once the reference is broadened. Read otherwise, it would mis-rank faithfully regionalized organoids
+(choroid plexus, midbrain, thalamus) as the worst performers, which they are not.
 
 Second, our negative disentanglement result is useful precisely because it is characterized, and we are
 deliberate about what it does and does not claim. The widespread intuition that a contrastive or
@@ -306,11 +343,14 @@ in-vitro stress state comes from the Aim~2 diagnostics, not from the adversary, 
 conflated. Methods that intervene at the encoder (e.g., adversarial or invariance-penalized encoders) or
 that operate distributionally rather than per-cell are the appropriate next step.
 
-Third, and reassuringly, the quantity Aim~3 actually needs---the \emph{relative} geometry of off-target
-populations---survives the disentanglement failure by an exact cancellation argument, and recovers
-biologically sensible lineage structure. This means off-target geometry can be used as a
-quality and comparison axis today, even though a fully dish-stripped per-cell coordinate is not yet
-attainable.
+Third, the quantity Aim~3 needs---the \emph{relative} geometry of off-target populations---survives the
+disentanglement failure only in part. The cancellation argument requires a per-lineage-constant source
+offset, and a direct test shows that offset is \emph{not} constant for these populations (mutual cosine
+$0.15$, against $0.855$ for on-target neural types), so the recovered distances are confounded. What is
+validated is their \emph{rank order}, which recovers the primary lineage structure (distance-matrix
+$r=0.90$). Aim~3 is therefore a working capability with a reference-anchored ordering---a comparison axis
+whose ranking can be trusted today---rather than a clean lineage geometry or a finished biological
+result; its metric awaits per-lineage offset removal or a matched-primary embedding.
 
 Limitations follow directly from the analysis. Off-manifold status conflates reference gap with
 biological aberrance, so absolute off-target rates are reference-dependent and should be read
@@ -321,10 +361,25 @@ contrast are the available evidence, and they agree on a mixture rather than on 
 dish-vector and stress scores are signature-based proxies, partially corroborated by the maturation
 correlation and the independent-atlas divergence signal. The well-powered Aim~3
 populations are non-neural off-target lineages; neural off-target geometry awaits a reference that
-closes the coverage gap. Finally, pairwise distances are robust to the global source offset but may
-still include a component of \emph{differential} in-vitro state between populations; the
-lineage-consistent ordering (myogenic populations closest) indicates that lineage dominates, but
-isolating that component is future work.
+closes the coverage gap. And, as shown in the Results, the cancellation that licenses Aim~3 assumes a
+per-lineage-constant source offset that a direct test finds does \emph{not} hold (mutual cosine $0.15$);
+the recovered distances are accordingly confounded, and only their rank order---validated against the
+primary reference ($r=0.90$)---should be relied on.
+
+Finally, and most consequentially, the disentanglement wall does not close the convergence question that
+motivated this work---it reroutes it. The same translation invariance that rescues Aim~3 is itself a way
+to ask whether cell types of different developmental origin converge, \emph{without} ever constructing a
+source-invariant per-cell coordinate: to test whether, say, brain-derived and kidney-derived mesenchyme
+have arrived at the same state, one needs only their \emph{relative} geometry in a space where the shared
+source offset cancels---the construction demonstrated here, with the proviso, made concrete by Aim~3,
+that the shared offset must actually be constant across the compared populations or be explicitly
+removed: a checkable condition, not a free lunch. A cross-germ-layer convergence study therefore runs
+through the cancellation logic and an offset-constancy check, not through repairing contrastive
+disentanglement; the negative result is not a detour away from that goal but the identification of which
+road does not reach it, together with a partly working vehicle---and a clear specification of the
+remaining repair---for the road that does. Framed as a statement about what is
+recoverable from which data---an identifiability boundary for calibration without anchoring---the
+characterized negative is a methods contribution in its own right.
 
 % =====================================================================
 \section{Methods}
@@ -383,7 +438,17 @@ size from rarefaction ($N_{\min}=2000$) and a matched-$N$ self-distance noise fl
 A pair was called a real difference when its bootstrap cross-distance interval exceeded the floor;
 multiplicity was controlled by Benjamini--Hochberg \citep{benjamini1995fdr}. Sliced-Wasserstein
 pairwise distances are invariant to a translation shared by both populations, which is what makes the
-comparison valid despite the residual source offset in \zlin.
+comparison valid despite the residual source offset in \zlin---\emph{provided} that offset is the same
+across the populations compared.
+
+\paragraph{Offset-constancy test.} For each of the four well-powered off-target lineages we drew up to
+$2500$ organoid cells (true-off-target, by predicted label) and the matched primary cells (same
+CELLxGENE ontology label), selected $2000$ highly variable genes on the pooled raw counts, log-normalized
+(CP10k, $\log1p$), and computed the per-lineage dish vector as the difference of organoid and primary
+centroids. We report the mutual cosine of these dish vectors (offset consistency), the cosine between the
+organoid and primary inter-lineage centroid vectors (geometry preservation), the ratio of the offset
+difference to the primary lineage separation, and the Pearson correlation of the organoid and primary
+pairwise-distance matrices across the six pairs (\texttt{scripts/dishvec\_consistency.py}).
 
 \paragraph{Compute and code.} Models were trained on a single NVIDIA H100 GPU. All quantitative panels
 are generated directly from pipeline artifacts (\texttt{docs/manuscript/make\_figures.py}); numerical
@@ -451,14 +516,18 @@ encode source directly; decoder batch-conditioning cannot remove it.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figs/fig5.pdf}
-\caption{\textbf{Off-target geometry is real and biologically ordered (Aim~3).}
+\caption{\textbf{Off-target geometry: distances clear the noise floor and their rank recovers primary
+lineage order (Aim~3).}
 (\textbf{a}) Background-latent (\zlin) embedding of the off-target populations; the four well-powered
 lineages separate.
-(\textbf{b}) Pairwise sliced-Wasserstein lineage-distance matrix.
+(\textbf{b}) Pairwise sliced-Wasserstein distance matrix.
 (\textbf{c}) Every well-powered pair clears its matched-$N$ noise floor ($q_{95}$, red) by
 $14$--$105\times$ (cross-distance with $95\%$ CI, blue; log axis).
 (\textbf{d}) Multidimensional scaling of the distance matrix: the two myogenic populations (cardiac,
-skeletal muscle) are closest, fibroblast most distant, as expected for a lineage embedding.}
+skeletal muscle) are closest, fibroblast most distant. The rank order matches the primary lineage
+geometry (distance-matrix $r=0.90$); the individual distances, however, are confounded by lineage-
+dependent source offsets (mutual cosine $0.15$; see text), so the ordering is validated but the metric
+is not a clean lineage distance.}
 \label{fig:aim3}
 \end{figure}
 
