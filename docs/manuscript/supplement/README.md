@@ -7,6 +7,17 @@ The purpose of this supplement is **defensibility**: every quantitative claim an
 the main text is traceable here to (i) the derived data behind it, (ii) a run log proving it
 executed, and (iii) the exact script that produced it. Files are grouped by the claim they support.
 
+## For preprint / journal upload
+
+**`Supplementary_Information.xlsx`** is the single consolidated file to upload as Supplementary
+Information (bioRxiv, or a journal's supplement slot). It contains a Contents sheet (index,
+claim→evidence map, data/code-availability statement) plus Tables S1–S6, one per sheet. Upload
+alongside the manuscript `main.pdf`.
+
+Everything else in this folder (run logs, latents `z_lin.npy`, `ref2_scores.npz`, `.json` results,
+`code/`) is **provenance for the GitHub repository / a Zenodo deposit** — cited in the paper's Data
+and Code Availability statement, **not** uploaded to the preprint server.
+
 ---
 
 ## How to read this supplement
