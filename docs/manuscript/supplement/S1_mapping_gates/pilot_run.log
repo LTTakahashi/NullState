@@ -1,0 +1,189 @@
+2026-06-15 11:17:15 | INFO     | Starting NullState HNOCA Pilot
+2026-06-15 11:17:15 | INFO     | 
+2026-06-15 11:17:15 | INFO     | ############################################################
+2026-06-15 11:17:15 | INFO     | # STEP 2: scANVI Mapping and Classification
+2026-06-15 11:17:15 | INFO     | ############################################################
+2026-06-15 11:17:24 | INFO     | Query schema OK: 100% ENSG var_names, .raw present (CELLxGENE copy).
+2026-06-15 11:17:25 | INFO     | GPU detected: NVIDIA H100 80GB HBM3
+2026-06-15 11:17:25 | INFO     | VRAM: 85.02 GB
+2026-06-15 11:17:25 | INFO     | Set float32 matmul precision to 'highest' (strict FP32, TF32 disabled to prevent ZINB underflow)
+2026-06-15 11:20:30 | INFO     | Filtering for top 4000 Highly Variable Genes (HVGs, flavor=seurat_v3)...
+2026-06-15 11:25:56 | INFO     | Starting NullState HNOCA Pilot
+2026-06-15 11:25:56 | INFO     | 
+2026-06-15 11:25:56 | INFO     | ############################################################
+2026-06-15 11:25:56 | INFO     | # STEP 2: scANVI Mapping and Classification
+2026-06-15 11:25:56 | INFO     | ############################################################
+2026-06-15 11:26:05 | INFO     | Query schema OK: 100% ENSG var_names, .raw present (CELLxGENE copy).
+2026-06-15 11:26:06 | INFO     | GPU detected: NVIDIA H100 80GB HBM3
+2026-06-15 11:26:06 | INFO     | VRAM: 85.02 GB
+2026-06-15 11:26:06 | INFO     | Set float32 matmul precision to 'highest' (strict FP32, TF32 disabled to prevent ZINB underflow)
+2026-06-15 11:29:15 | INFO     | Filtering for top 4000 Highly Variable Genes (HVGs, flavor=seurat_v3)...
+2026-06-15 11:30:58 | INFO     | Reference shape after HVG filtering: (2615898, 4000)
+2026-06-15 11:30:58 | INFO     | Setting up AnnData for SCVI...
+2026-06-15 11:30:58 | INFO     | Training SCVI (n_latent=30, max_epochs=400)...
+2026-06-15 13:59:09 | INFO     | SCVI training complete in 148.2 min. Final ELBO: 695.58
+2026-06-15 13:59:09 | INFO     | SCVI model saved to results/pilot/reference_model/scvi_model
+2026-06-15 13:59:09 | INFO     | Progress saved: scvi -> {'epochs': 400, 'final_elbo': 695.5805053710938, 'elapsed_min': 148.2, 'model_dir': 'results/pilot/reference_model/scvi_model'}
+2026-06-15 13:59:09 | INFO     | Upgrading to SCANVI using labels_key=cell_type...
+2026-06-15 13:59:09 | INFO     | Training SCANVI (max_epochs=200, early_stopping=True, patience=15)...
+2026-06-15 14:33:34 | INFO     | SCANVI training complete in 34.4 min (46 epochs run). Final ELBO: 736.10
+2026-06-15 14:33:34 | INFO     | Progress saved: scanvi -> {'epochs': 46, 'max_epochs': 200, 'early_stopping': True, 'final_elbo': 736.0997314453125, 'elapsed_min': 34.4}
+2026-06-15 14:33:34 | INFO     | Saving model to results/pilot/reference_model/ref_scanvi
+2026-06-15 14:33:35 | INFO     | Loading query from data/hnoca_cellxgene.h5ad...
+2026-06-15 14:39:04 | INFO     | Query already Ensembl-indexed; stripped version suffixes (35725 genes after dedup).
+2026-06-15 14:39:04 | INFO     | Query already has batch column 'donor_id' (46 levels).
+2026-06-15 14:39:22 | INFO     | Using query.raw.X (integer UMI counts; CELLxGENE schema) as raw counts for scVI mapping.
+2026-06-15 14:39:22 | INFO     | Subsetting query to match reference HVGs...
+2026-06-15 14:39:36 | INFO     | Checking for dead genes (0 expression) to prevent NaN variance explosions...
+2026-06-15 14:39:36 | WARNING  | Found 23 dead genes. Injecting a single pseudo-count to stabilize PyTorch variance estimators...
+2026-06-15 14:40:02 | INFO     | Filtered query to cells with >= 50 counts across HVGs: 1767346 -> 1689762 (4.4% dropped).
+2026-06-15 14:40:02 | INFO     | Preparing query data for scArches surgery...
+2026-06-15 14:40:20 | INFO     | Loading query data into SCANVI model...
+2026-06-15 14:40:22 | INFO     | Training scArches model (max_epochs=100, weight_decay=0.0)...
+2026-06-15 16:21:20 | INFO     | Starting NullState HNOCA Pilot
+2026-06-15 16:21:20 | INFO     | 
+2026-06-15 16:21:20 | INFO     | ############################################################
+2026-06-15 16:21:20 | INFO     | # STEP 2: scANVI Mapping and Classification
+2026-06-15 16:21:20 | INFO     | ############################################################
+2026-06-15 16:21:31 | INFO     | Query schema OK: 100% ENSG var_names, .raw present (CELLxGENE copy).
+2026-06-15 16:21:32 | INFO     | GPU detected: NVIDIA H100 80GB HBM3
+2026-06-15 16:21:32 | INFO     | VRAM: 85.02 GB
+2026-06-15 16:21:32 | INFO     | Set float32 matmul precision to 'highest' (strict FP32, TF32 disabled to prevent ZINB underflow)
+2026-06-15 16:24:38 | INFO     | Filtering for top 4000 Highly Variable Genes (HVGs, flavor=seurat_v3)...
+2026-06-15 16:26:07 | INFO     | Reference shape after HVG filtering: (2615898, 4000)
+2026-06-15 16:26:07 | INFO     | SCVI already trained ({'epochs': 400, 'final_elbo': 695.5805053710938, 'elapsed_min': 148.2, 'model_dir': 'results/pilot/reference_model/scvi_model'}). Loading saved model...
+2026-06-15 16:26:08 | INFO     | SCANVI already trained ({'epochs': 46, 'max_epochs': 200, 'early_stopping': True, 'final_elbo': 736.0997314453125, 'elapsed_min': 34.4}). Loading saved model...
+2026-06-15 16:26:11 | INFO     | Loading query from data/hnoca_cellxgene.h5ad...
+2026-06-15 16:31:46 | INFO     | Query already Ensembl-indexed; stripped version suffixes (35725 genes after dedup).
+2026-06-15 16:31:46 | INFO     | Query already has batch column 'donor_id' (46 levels).
+2026-06-15 16:32:03 | INFO     | Using query.raw.X (integer UMI counts; CELLxGENE schema) as raw counts for scVI mapping.
+2026-06-15 16:32:03 | INFO     | Subsetting query to match reference HVGs...
+2026-06-15 16:32:16 | INFO     | Checking for dead genes (0 expression) to prevent NaN variance explosions...
+2026-06-15 16:32:16 | WARNING  | Found 23 dead genes. Injecting a single pseudo-count to stabilize PyTorch variance estimators...
+2026-06-15 16:32:41 | INFO     | Filtered query to cells with >= 50 counts across HVGs: 1767346 -> 1689762 (4.4% dropped).
+2026-06-15 16:32:41 | INFO     | Preparing query data for scArches surgery...
+2026-06-15 16:33:00 | INFO     | Loading query data into SCANVI model...
+2026-06-15 16:33:01 | INFO     | Training scArches model (max_epochs=100, weight_decay=0.0)...
+2026-06-15 16:47:15 | INFO     | Starting NullState HNOCA Pilot
+2026-06-15 16:47:15 | INFO     | 
+2026-06-15 16:47:15 | INFO     | ############################################################
+2026-06-15 16:47:15 | INFO     | # STEP 2: scANVI Mapping and Classification
+2026-06-15 16:47:15 | INFO     | ############################################################
+2026-06-15 16:47:26 | INFO     | Query schema OK: 100% ENSG var_names, .raw present (CELLxGENE copy).
+2026-06-15 16:47:27 | INFO     | GPU detected: NVIDIA H100 80GB HBM3
+2026-06-15 16:47:27 | INFO     | VRAM: 85.02 GB
+2026-06-15 16:47:27 | INFO     | Set float32 matmul precision to 'highest' (strict FP32, TF32 disabled to prevent ZINB underflow)
+2026-06-15 16:50:34 | INFO     | Filtering for top 4000 Highly Variable Genes (HVGs, flavor=seurat_v3)...
+2026-06-15 16:52:03 | INFO     | Reference shape after HVG filtering: (2615898, 4000)
+2026-06-15 16:52:03 | INFO     | SCVI already trained ({'epochs': 400, 'final_elbo': 695.5805053710938, 'elapsed_min': 148.2, 'model_dir': 'results/pilot/reference_model/scvi_model'}). Loading saved model...
+2026-06-15 16:52:05 | INFO     | SCANVI already trained ({'epochs': 46, 'max_epochs': 200, 'early_stopping': True, 'final_elbo': 736.0997314453125, 'elapsed_min': 34.4}). Loading saved model...
+2026-06-15 16:52:08 | INFO     | Loading query from data/hnoca_cellxgene.h5ad...
+2026-06-15 17:22:49 | INFO     | Starting NullState HNOCA Pilot
+2026-06-15 17:22:49 | INFO     | 
+2026-06-15 17:22:49 | INFO     | ############################################################
+2026-06-15 17:22:49 | INFO     | # STEP 2: scANVI Mapping and Classification
+2026-06-15 17:22:49 | INFO     | ############################################################
+2026-06-15 17:23:01 | INFO     | Query schema OK: 100% ENSG var_names, .raw present (CELLxGENE copy).
+2026-06-15 17:23:01 | INFO     | GPU detected: NVIDIA H100 80GB HBM3
+2026-06-15 17:23:01 | INFO     | VRAM: 85.02 GB
+2026-06-15 17:23:01 | INFO     | Set float32 matmul precision to 'highest' (strict FP32, TF32 disabled to prevent ZINB underflow)
+2026-06-15 17:26:12 | INFO     | Filtering for top 4000 Highly Variable Genes (HVGs, flavor=seurat_v3)...
+2026-06-15 17:27:41 | INFO     | Reference shape after HVG filtering: (2615898, 4000)
+2026-06-15 17:27:41 | INFO     | SCVI already trained ({'epochs': 400, 'final_elbo': 695.5805053710938, 'elapsed_min': 148.2, 'model_dir': 'results/pilot/reference_model/scvi_model'}). Loading saved model...
+2026-06-15 17:27:43 | INFO     | SCANVI already trained ({'epochs': 46, 'max_epochs': 200, 'early_stopping': True, 'final_elbo': 736.0997314453125, 'elapsed_min': 34.4}). Loading saved model...
+2026-06-15 17:27:46 | INFO     | Loading query from data/hnoca_cellxgene.h5ad...
+2026-06-15 17:33:23 | INFO     | Query already Ensembl-indexed; stripped version suffixes (35725 genes after dedup).
+2026-06-15 17:33:23 | INFO     | Query already has batch column 'donor_id' (46 levels).
+2026-06-15 17:33:39 | INFO     | Using query.raw.X (integer UMI counts; CELLxGENE schema) as raw counts for scVI mapping.
+2026-06-15 17:33:39 | INFO     | Subsetting query to match reference HVGs...
+2026-06-15 17:33:52 | INFO     | Checking for dead genes (0 expression) to prevent NaN variance explosions...
+2026-06-15 17:33:52 | WARNING  | Found 23 dead genes. Injecting a single pseudo-count to stabilize PyTorch variance estimators...
+2026-06-15 17:34:17 | INFO     | Filtered query to cells with >= 50 counts across HVGs: 1767346 -> 1689762 (4.4% dropped).
+2026-06-15 17:34:21 | WARNING  | Dropped 9229 non-UMI read-count cells (per-cell max > 1000) before scArches surgery to prevent encoder NaN; 1680533 cells remain.
+2026-06-15 17:34:21 | INFO     | Preparing query data for scArches surgery...
+2026-06-15 17:34:40 | INFO     | Loading query data into SCANVI model...
+2026-06-15 17:34:42 | INFO     | Training scArches model (max_epochs=100, weight_decay=0.0)...
+2026-06-15 17:49:38 | INFO     | scArches training complete in 14.9 min. Final ELBO: 920.23
+2026-06-15 17:49:38 | INFO     | Progress saved: scarches -> {'epochs': 100, 'final_elbo': 920.2274780273438, 'elapsed_min': 14.9}
+2026-06-15 17:49:38 | INFO     | Saving model to results/pilot/reference_model/query_scanvi
+2026-06-15 17:49:39 | INFO     | === Full training pipeline complete ===
+2026-06-15 17:49:48 | INFO     | [Integration QC] evaluating 20000 cells (53 batches)...
+2026-06-15 17:50:06 | INFO     | [Integration QC] batch iLISI integrated=8.10 vs pca=6.10 (higher=better mixing; max possible=53)
+2026-06-15 17:50:06 | INFO     | [Integration QC] label cLISI integrated=1.44 vs pca=1.31 (~1 = cell types stay separable)
+2026-06-15 17:50:06 | INFO     | [Integration QC] VERDICT: mixing_improved=True, bio_preserved=True
+2026-06-15 17:50:06 | INFO     | [Integration QC] saved -> results/pilot/integration_qc.json
+2026-06-15 17:53:03 | INFO     | Calibrating thresholds using 10.0% of reference cells...
+2026-06-15 17:53:07 | INFO     | Predicting soft labels for query...
+2026-06-15 17:53:17 | INFO     | Computing Shannon entropy...
+2026-06-15 17:53:17 | INFO     | Extracting latent representations...
+2026-06-15 17:54:05 | INFO     | Fitting NearestNeighbors (k=15) on reference latent...
+2026-06-15 17:54:05 | INFO     | Calculating distances for query...
+2026-06-15 17:56:19 | INFO     | Calibrated tau_H (entropy): 0.9598
+2026-06-15 17:56:19 | INFO     | Calibrated tau_R (off-manifold): 1.9318
+2026-06-15 17:56:19 | INFO     | Predicting soft labels for query...
+2026-06-15 17:56:51 | INFO     | Computing Shannon entropy...
+2026-06-15 17:56:52 | INFO     | Extracting latent representations...
+2026-06-15 17:58:00 | INFO     | Fitting NearestNeighbors (k=15) on reference latent...
+2026-06-15 17:58:00 | INFO     | Calculating distances for query...
+2026-06-15 18:13:58 | INFO     | Annotating query AnnData...
+2026-06-15 18:13:59 | INFO     | Scored 1680533 / 1767346 query cells (86813 unscored / QC-dropped upstream).
+2026-06-15 18:14:02 | INFO     | [Label confidence] most-uncertain predicted types (high entropy = guessing):
+2026-06-15 18:14:02 | INFO     |    enteric neuron: n=34 mean_H=2.593 top_prob=0.20
+2026-06-15 18:14:02 | INFO     |    innate lymphoid cell: n=1477 mean_H=2.139 top_prob=0.34
+2026-06-15 18:14:02 | INFO     |    mesothelial cell: n=124 mean_H=2.112 top_prob=0.31
+2026-06-15 18:14:02 | INFO     |    ciliated epithelial cell: n=76 mean_H=1.998 top_prob=0.32
+2026-06-15 18:14:02 | INFO     |    myeloid cell: n=567 mean_H=1.924 top_prob=0.37
+2026-06-15 18:14:02 | INFO     |    megakaryocyte: n=3308 mean_H=1.918 top_prob=0.36
+2026-06-15 18:14:02 | INFO     |    smooth muscle cell: n=2450 mean_H=1.841 top_prob=0.40
+2026-06-15 18:14:02 | INFO     |    blood vessel endothelial cell: n=82 mean_H=1.777 top_prob=0.35
+2026-06-15 18:14:02 | INFO     | [Label confidence] saved -> results/pilot/label_confidence.csv
+2026-06-15 18:14:02 | INFO     | Classifying all query cells (expected_germ_layer=neural)...
+2026-06-15 18:14:15 | INFO     | Class distribution:
+2026-06-15 18:14:15 | INFO     |   ambiguous_novel: 677783 (38.4%)
+2026-06-15 18:14:15 | INFO     |   clean_ontarget: 459441 (26.0%)
+2026-06-15 18:14:15 | INFO     |   poorly_diff_ontarget: 281217 (15.9%)
+2026-06-15 18:14:15 | INFO     |   ambiguous: 167838 (9.5%)
+2026-06-15 18:14:15 | INFO     |   true_offtarget: 93795 (5.3%)
+2026-06-15 18:14:15 | INFO     |   qc_dropped: 86813 (4.9%)
+2026-06-15 18:14:15 | INFO     |   other: 459 (0.0%)
+2026-06-15 18:22:43 | INFO     | # END STEP 2
+2026-06-15 18:22:43 | INFO     | ############################################################
+
+2026-06-15 18:22:43 | INFO     | 
+2026-06-15 18:22:43 | INFO     | ############################################################
+2026-06-15 18:22:43 | INFO     | # STEP 3: Dish-Vector Test (GO/NO-GO)
+2026-06-15 18:22:43 | INFO     | ############################################################
+2026-06-15 18:29:15 | INFO     | Dish vectors: restricted query to 459441 clean_ontarget cells.
+2026-06-15 18:29:15 | INFO     | Stripped Ensembl version suffixes on query var_names for dish vectors (35725 genes).
+2026-06-15 18:29:16 | INFO     | Dish vectors: subsampled to <= 3000 cells/type -> ref 26640, query 20332 cells across 10 types.
+2026-06-15 18:29:16 | WARNING  | Reference X is raw counts; applying full-panel log1p-CP10k to match query space for dish vectors. Confirm the query uses the same normalization.
+2026-06-15 18:29:16 | INFO     | Subsetting query and ref to 35725 common genes for dish vectors...
+2026-06-15 18:29:17 | INFO     | Computing dish vectors for 10 common types...
+2026-06-15 18:29:17 | WARNING  | No genes found for set glycolysis.
+2026-06-15 18:29:17 | WARNING  | No genes found for set hypoxia.
+2026-06-15 18:29:17 | WARNING  | No genes found for set upr.
+2026-06-15 18:29:17 | WARNING  | No genes found for set emt.
+2026-06-15 18:29:17 | INFO     | ==================================================
+2026-06-15 18:29:17 | INFO     | GATE DECISION: Dish-Vector Test
+2026-06-15 18:29:17 | INFO     | RESULT: GO
+2026-06-15 18:29:17 | INFO     | --------------------
+2026-06-15 18:29:17 | INFO     | Mean Cosine: 0.8552416377597385
+2026-06-15 18:29:17 | INFO     | ==================================================
+2026-06-15 18:29:17 | INFO     | # END STEP 3
+2026-06-15 18:29:17 | INFO     | ############################################################
+
+2026-06-15 18:29:17 | INFO     | 
+2026-06-15 18:29:17 | INFO     | ############################################################
+2026-06-15 18:29:17 | INFO     | # STEP 4: Count Check (GREEN/YELLOW/RED)
+2026-06-15 18:29:17 | INFO     | ############################################################
+2026-06-15 18:29:24 | INFO     | ==================================================
+2026-06-15 18:29:24 | INFO     | GATE DECISION: Count Check
+2026-06-15 18:29:24 | INFO     | RESULT: GREEN
+2026-06-15 18:29:24 | INFO     | --------------------
+2026-06-15 18:29:24 | INFO     | Total candidates: 6808
+2026-06-15 18:29:24 | INFO     | Protocols: 24
+2026-06-15 18:29:24 | INFO     | ==================================================
+2026-06-15 18:29:24 | INFO     | # END STEP 4
+2026-06-15 18:29:24 | INFO     | ############################################################
+
+2026-06-15 18:29:24 | INFO     | Pilot Execution Complete.

@@ -1,0 +1,17 @@
+metric,value
+reference_cells,2615898
+query_cells,1767346
+scVI_ELBO,695.58
+scANVI_ELBO,736.1
+scArches_surgery_ELBO,920.23
+tau_H_entropy,0.9598
+tau_R_offmanifold,1.9318
+Gate_A,PASS
+Gate_B,GO
+Gate_B_dishvector_cosine,0.8552
+Gate_B_threshold,0.7
+Gate_C,GREEN
+iLISI_unintegrated,6.0978
+iLISI_scVI,8.1022
+cLISI_unintegrated,1.3128
+cLISI_scVI,1.4439

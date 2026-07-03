@@ -1,0 +1,8 @@
+class,n_cells,percent
+ambiguous_novel,677783,38.35
+clean_ontarget,459441,26.0
+poorly_diff_ontarget,281217,15.91
+ambiguous,167838,9.5
+true_offtarget,93795,5.31
+qc_dropped,86813,4.91
+other,459,0.03

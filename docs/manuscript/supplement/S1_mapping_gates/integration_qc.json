@@ -1,0 +1,20 @@
+{
+  "n_cells_evaluated": 20000,
+  "batch_key": "donor_id",
+  "n_batches": 53,
+  "n_labels": 33,
+  "integrated_scvi": {
+    "batch_iLISI": 8.1021749081645,
+    "label_cLISI": 1.44389577897327
+  },
+  "unintegrated_pca": {
+    "batch_iLISI": 6.097849255726284,
+    "label_cLISI": 1.3127788913547607
+  },
+  "interpretation": {
+    "batch_mixing_improved": true,
+    "batch_iLISI_gain": 2.004325652438216,
+    "bio_conservation_preserved": true,
+    "label_cLISI_inflation": 0.13111688761850937
+  }
+}

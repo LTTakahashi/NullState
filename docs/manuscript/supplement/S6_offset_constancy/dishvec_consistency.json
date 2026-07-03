@@ -1,0 +1,49 @@
+{
+  "lineages": [
+    "cell of skeletal muscle",
+    "cardiac muscle cell",
+    "fibroblast",
+    "cortical cell of adrenal gland"
+  ],
+  "n_hvg": 2000,
+  "n_shared_genes": 35725,
+  "offset_cosine_matrix": [
+    [
+      1.0,
+      0.551,
+      -0.091,
+      0.298
+    ],
+    [
+      0.551,
+      1.0,
+      -0.071,
+      0.306
+    ],
+    [
+      -0.091,
+      -0.071,
+      1.0,
+      -0.094
+    ],
+    [
+      0.298,
+      0.306,
+      -0.094,
+      1.0
+    ]
+  ],
+  "mean_offset_cosine": 0.15,
+  "gate_b_neural_cosine": 0.855,
+  "geometry_preservation_cos_mean": 0.294,
+  "geometry_preservation_cos_min": 0.04,
+  "organoid_vs_primary_distmatrix_corr": 0.902,
+  "mean_contamination_over_lineagedist": 1.034,
+  "n_per_lineage_organoid": {
+    "cell of skeletal muscle": 2500,
+    "cardiac muscle cell": 2500,
+    "fibroblast": 2500,
+    "cortical cell of adrenal gland": 2500
+  },
+  "interpretation": "Per-lineage source offsets are directionally INconsistent (mean cosine 0.15 vs 0.855 on-target neural). The decisive test is whether that distorts geometry: organoid inter-lineage vectors align with PRIMARY inter-lineage vectors at mean cosine 0.294 (min 0.04), and the organoid vs primary pairwise-distance matrices correlate r=0.902. Offsets materially distort the geometry -> Aim 3 distances are confounded."
+}

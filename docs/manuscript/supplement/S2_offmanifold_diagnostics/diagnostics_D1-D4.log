@@ -1,0 +1,69 @@
+HNOCA obsm keys: ['X_scpoli', 'X_umap_scpoli']
+ambnov_neural=566910  clean_neural=459441
+
+===== D3 CROSS-PROTOCOL: ambiguous_novel fraction among NEURAL cells per protocol =====
+/workspace/NullState/diagnostics.py:40: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  g = df.groupby(protocol_col)["ambnov"].agg(["mean", "size"]).query("size >= 200").sort_values("mean")
+                                                                 ambnov_frac  n_neural
+assay_differentiation                                                                 
+Andersen, 2020 (doi: 10.1016/j.cell.2020.11.017); without DAPT         0.004      1447
+Huang, 2021 (doi: 10.1016/j.stem.2021.04.006)                          0.034      5104
+Pasca, 2015 (doi: 10.1038/nmeth.3415)                                  0.100     12825
+Andersen, 2020 (doi: 10.1016/j.cell.2020.11.017)                       0.119     11208
+Esk, 2020 (doi: 10.1126/science.abb5390)                               0.174      4088
+Watanabe, 2017 (doi: 10.1016/j.celrep.2017.09.047)                     0.295     20682
+Birey, 2017 (doi: 10.1038/nature22330)                                 0.319      3459
+Velasco, 2019 (doi: 10.1038/s41586-019-1289-x)                         0.323    586099
+Sawada, 2020 (doi: 10.1038/s41380-020-0844-z)                          0.346      1395
+Bhaduri, 2020 (doi: 10.1038/s41586-020-1962-0); most directed          0.352     35277
+Bhaduri, 2020 (doi: 10.1038/s41586-020-1962-0); directed               0.357     27968
+Quadrato, 2017 (doi: 10.1038/protex.2017.049)                          0.378     47442
+Qian, 2020 (doi: 10.1016/j.stem.2020.02.002)                           0.413      2767
+Qian et al., 2016 (doi: 10.1016/j.cell.2016.04.032)                    0.461     44582
+Jo et al., 2016 (doi: 10.1016/j.stem.2016.07.005)                      0.462     48815
+Lancaster, 2014 (doi: 10.1038/nprot.2014.158)                          0.493    159373
+Trujillo, 2019 (doi: 10.1016/j.stem.2019.08.002)                       0.507     12646
+Quadrato, 2023 (doi: no_doi)                                           0.526     13495
+Yoon, 2019 (doi: 10.1038/s41592-018-0255-0)                            0.564    135613
+Miura, 2020 (doi: 10.1038/s41587-020-00763-w)                          0.738     13621
+Pellegrini, 2020 (doi: 10.1126/science.aaz5626); hCO                   0.784      9913
+Fiorenzano, 2021 (doi:10.1038/s41467-021-27464-5); silk+laminin        0.836     13602
+Fiorenzano, 2021 (doi: 10.1038/s41467-021-27464-5); standard           0.852     64077
+Fiorenzano, 2021 (doi: 10.1038/s41467-021-27464-5); silk               0.898     12430
+Xiang, 2019 (doi: 10.1016/j.stem.2018.12.015)                          0.902      9444
+Pellegrini, 2020 (doi: 10.1126/science.aaz5626); hChPO                 0.968     10181
+  -> spread: min=0.00 max=0.97 std=0.280  (consistent=general property; concentrated=protocol-specific)
+
+===== D2 MATURATION: off-manifold vs maturation axes =====
+/workspace/NullState/diagnostics.py:51: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  t = pd.DataFrame({"bin": bins, "ambnov": ambnov[neural], "om": om[neural]}).groupby("bin").agg(
+  by organoid_age_days quintile (low->high age):
+                ambnov_frac  median_offmanifold       n
+bin                                                    
+(6.999, 35.0]         0.428               1.844  384345
+(35.0, 60.0]          0.322               1.714  324800
+(60.0, 70.0]          0.331               1.765   81041
+(70.0, 119.0]         0.424               1.845  259696
+(119.0, 450.0]        0.623               2.117  257686
+/workspace/NullState/diagnostics.py:58: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  t = pd.DataFrame({"bin": bins, "ambnov": ambnov[neural]}).groupby("bin")["ambnov"].mean()
+  ambnov_frac by n_genes_by_counts quintile (CytoTRACE potency proxy, low->high):
+    {Interval(222.999, 1316.0, closed='right'): 0.127, Interval(1316.0, 1836.0, closed='right'): 0.277, Interval(1836.0, 2382.0, closed='right'): 0.419, Interval(2382.0, 3154.0, closed='right'): 0.569, Interval(3154.0, 10415.0, closed='right'): 0.776}
+
+===== D1 MARKER COHERENCE: neural identity vs stress signatures =====
+  scored panels: ['NPC_progenitor', 'Neuron', 'Glia_astro', 'Hypoxia', 'UPR_ERstress', 'Glycolysis']
+               NPC_progenitor  Neuron  Glia_astro  Hypoxia  UPR_ERstress  Glycolysis
+grp                                                                                 
+ambnov_neural           0.608   0.429       0.072    0.961         0.561       2.132
+clean_neural            1.110   0.416      -0.239    0.600         0.117       2.027
+  HNOCA Hallmark_Glycolysis (precomputed) mean: ambnov=0.650 clean=0.462
+
+===== D4 CLUSTER COHERENCE: do ambnov_neural cells form coherent clusters? =====
+/workspace/NullState/diagnostics.py:112: FutureWarning: The default of observed=False is deprecated and will be changed to True in a future version of pandas. Pass observed=False to retain current behavior or observed=True to adopt the future default and silence this warning.
+  per = cl.obs.groupby("leiden")["ambnov"].agg(["mean", "size"])
+  emb=X_scpoli  n_clusters=30  overall ambnov_frac=0.55
+  cluster ambnov_frac spread: min=0.08 max=0.96 std=0.288
+  cells in ~pure-ambnov clusters(>=0.8): 12153 (20%); ~pure-clean(<=0.2): 12479 (21%)
+  -> high std / large pure fractions = COHERENT population; uniform ~overall = SCATTER
+
+=== DIAGNOSTICS DONE ===

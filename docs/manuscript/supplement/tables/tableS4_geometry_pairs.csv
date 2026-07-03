@@ -1,0 +1,8 @@
+pair,n_star,cross_W_mean,cross_lo,cross_hi,floor_q95,clears_floor,verdict
+cardiac muscle cell|cell of skeletal muscle,2534,0.315,0.257,0.372,0.0231,True,real_difference
+cardiac muscle cell|cortical cell of adrenal gland,2534,0.836,0.675,0.98,0.023,True,real_difference
+cardiac muscle cell|fibroblast,2534,0.992,0.822,1.17,0.0262,True,real_difference
+cell of skeletal muscle|cortical cell of adrenal gland,30629,0.779,0.619,0.937,0.0074,True,real_difference
+cell of skeletal muscle|fibroblast,6349,0.961,0.79,1.158,0.0148,True,real_difference
+cortical cell of adrenal gland|fibroblast,6349,0.963,0.774,1.13,0.0146,True,real_difference
+# note,136 total pairs; 130 inconclusive_underpowered (N<n_min=2000),,,,,,

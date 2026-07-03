@@ -1,0 +1,11 @@
+metric,value
+median_refself,2.244696303208669
+median_clean,4.020495470364889
+median_ambnov,4.438483778635661
+auc,0.6475741674727324
+cliffs_delta,0.2951483349454649
+p_value,0.0
+ambnov_beyond_clean_p50,0.6953076273984664
+ambnov_beyond_clean_p95,0.15221777891917673
+n_clean,14806
+n_ambnov,27257

@@ -1,0 +1,301 @@
+{
+  "reference": {
+    "n_cells": 2615898,
+    "n_genes": 61497,
+    "hdbca": 1665937,
+    "cao": 949961,
+    "origins_mapped": "32/33"
+  },
+  "query": {
+    "n_cells": 1767346,
+    "n_genes": 35725,
+    "n_protocols": 27,
+    "after_hvg_filter": 1689762,
+    "hvg_dropped_frac": 0.044,
+    "after_umi_cap": 1680533,
+    "umi_cap_dropped": 9229
+  },
+  "training": {
+    "scvi_elbo": 695.58,
+    "scvi_min": 148.2,
+    "scvi_epochs": 400,
+    "scanvi_elbo": 736.1,
+    "scanvi_epochs": 46,
+    "scarches_elbo": 920.23,
+    "scarches_min": 14.9,
+    "tau_H": 0.9598,
+    "tau_R": 1.9318
+  },
+  "integration": {
+    "ilisi_int": 8.1022,
+    "ilisi_pca": 6.0978,
+    "clisi_int": 1.4439,
+    "clisi_pca": 1.3128,
+    "n_batches": 53,
+    "n_labels": 33
+  },
+  "classes": {
+    "ambiguous_novel": 677783,
+    "clean_ontarget": 459441,
+    "poorly_diff_ontarget": 281217,
+    "ambiguous": 167838,
+    "true_offtarget": 93795,
+    "qc_dropped": 86813,
+    "other": 459
+  },
+  "gates": {
+    "A": "PASS",
+    "B": "GO",
+    "B_cosine": 0.8552,
+    "B_threshold": 0.7,
+    "B_n_clean": 459441,
+    "C": "GREEN"
+  },
+  "aim2": {
+    "baseline": 0.998,
+    "fix1_salient30": 0.999,
+    "fix2_batch": 0.998,
+    "ideal": 0.5,
+    "pass_threshold": 0.6
+  },
+  "diag": {
+    "d1_markers": [
+      "NPC\nprogenitor",
+      "Neuron",
+      "Glia /\nastro",
+      "Hypoxia",
+      "UPR /\nER-stress",
+      "Glycolysis"
+    ],
+    "d1_ambnov": [
+      0.608,
+      0.429,
+      0.072,
+      0.961,
+      0.561,
+      2.132
+    ],
+    "d1_clean": [
+      1.11,
+      0.416,
+      -0.239,
+      0.6,
+      0.117,
+      2.027
+    ],
+    "d1_hallmark_glyc_ambnov": 0.65,
+    "d1_hallmark_glyc_clean": 0.462,
+    "d2_potency": [
+      0.127,
+      0.277,
+      0.419,
+      0.569,
+      0.776
+    ],
+    "d2_age": [
+      0.428,
+      0.322,
+      0.331,
+      0.424,
+      0.623
+    ],
+    "d2_age_offman": [
+      1.844,
+      1.714,
+      1.765,
+      1.845,
+      2.117
+    ],
+    "d4_overall": 0.55,
+    "d4_std": 0.288,
+    "d4_pure_amb": 0.2,
+    "d4_pure_clean": 0.21,
+    "d3": [
+      [
+        "Andersen 2020 (+DAPT off)",
+        0.004,
+        1447
+      ],
+      [
+        "Huang 2021",
+        0.034,
+        5104
+      ],
+      [
+        "Pasca 2015",
+        0.1,
+        12825
+      ],
+      [
+        "Andersen 2020",
+        0.119,
+        11208
+      ],
+      [
+        "Esk 2020",
+        0.174,
+        4088
+      ],
+      [
+        "Watanabe 2017",
+        0.295,
+        20682
+      ],
+      [
+        "Birey 2017",
+        0.319,
+        3459
+      ],
+      [
+        "Velasco 2019",
+        0.323,
+        586099
+      ],
+      [
+        "Sawada 2020",
+        0.346,
+        1395
+      ],
+      [
+        "Bhaduri 2020 (most dir.)",
+        0.352,
+        35277
+      ],
+      [
+        "Bhaduri 2020 (dir.)",
+        0.357,
+        27968
+      ],
+      [
+        "Quadrato 2017",
+        0.378,
+        47442
+      ],
+      [
+        "Qian 2020",
+        0.413,
+        2767
+      ],
+      [
+        "Qian 2016",
+        0.461,
+        44582
+      ],
+      [
+        "Jo 2016",
+        0.462,
+        48815
+      ],
+      [
+        "Lancaster 2014",
+        0.493,
+        159373
+      ],
+      [
+        "Trujillo 2019",
+        0.507,
+        12646
+      ],
+      [
+        "Quadrato 2023",
+        0.526,
+        13495
+      ],
+      [
+        "Yoon 2019",
+        0.564,
+        135613
+      ],
+      [
+        "Miura 2020",
+        0.738,
+        13621
+      ],
+      [
+        "Pellegrini 2020 (hCO)",
+        0.784,
+        9913
+      ],
+      [
+        "Fiorenzano 2021 (silk+lam)",
+        0.836,
+        13602
+      ],
+      [
+        "Fiorenzano 2021 (std)",
+        0.852,
+        64077
+      ],
+      [
+        "Fiorenzano 2021 (silk)",
+        0.898,
+        12430
+      ],
+      [
+        "Xiang 2019",
+        0.902,
+        9444
+      ],
+      [
+        "Pellegrini 2020 (hChPO)",
+        0.968,
+        10181
+      ]
+    ]
+  },
+  "geometry_pairs": {
+    "cardiac muscle cell|cell of skeletal muscle": {
+      "cross_mean": 0.31469965933276034,
+      "cross_lo": 0.25748680252658024,
+      "cross_hi": 0.3723126109135835,
+      "floor_q95": 0.023079297033311488,
+      "n_star": 2534,
+      "verdict": "real_difference"
+    },
+    "cardiac muscle cell|cortical cell of adrenal gland": {
+      "cross_mean": 0.8358175406945441,
+      "cross_lo": 0.675245013541401,
+      "cross_hi": 0.9803113571821996,
+      "floor_q95": 0.0229767930842946,
+      "n_star": 2534,
+      "verdict": "real_difference"
+    },
+    "cardiac muscle cell|fibroblast": {
+      "cross_mean": 0.9924319490657035,
+      "cross_lo": 0.8217360231742867,
+      "cross_hi": 1.1704155176934758,
+      "floor_q95": 0.026187752719516164,
+      "n_star": 2534,
+      "verdict": "real_difference"
+    },
+    "cell of skeletal muscle|cortical cell of adrenal gland": {
+      "cross_mean": 0.7793903839400451,
+      "cross_lo": 0.6187577589779759,
+      "cross_hi": 0.9373528368865163,
+      "floor_q95": 0.007384005619876316,
+      "n_star": 30629,
+      "verdict": "real_difference"
+    },
+    "cell of skeletal muscle|fibroblast": {
+      "cross_mean": 0.9611263424803426,
+      "cross_lo": 0.7896910916616553,
+      "cross_hi": 1.1577698313625269,
+      "floor_q95": 0.014801491623358849,
+      "n_star": 6349,
+      "verdict": "real_difference"
+    },
+    "cortical cell of adrenal gland|fibroblast": {
+      "cross_mean": 0.9633945653733136,
+      "cross_lo": 0.7741468363469306,
+      "cross_hi": 1.1300725968769212,
+      "floor_q95": 0.014606734664210695,
+      "n_star": 6349,
+      "verdict": "real_difference"
+    }
+  },
+  "geometry_verdicts": {
+    "real_difference": 6,
+    "inconclusive_underpowered": 130,
+    "n_min": 2000
+  }
+}

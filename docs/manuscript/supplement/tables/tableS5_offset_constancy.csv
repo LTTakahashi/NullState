@@ -1,0 +1,11 @@
+offset_cosine_matrix,cell of skeletal muscle,cardiac muscle cell,fibroblast,cortical cell of adrenal gland
+cell of skeletal muscle,1.0,0.551,-0.091,0.298
+cardiac muscle cell,0.551,1.0,-0.071,0.306
+fibroblast,-0.091,-0.071,1.0,-0.094
+cortical cell of adrenal gland,0.298,0.306,-0.094,1.0
+
+mean_offset_cosine,0.15
+gate_b_neural_cosine,0.855
+geometry_preservation_cos_mean,0.294
+organoid_vs_primary_distmatrix_corr,0.902
+mean_contamination_over_lineagedist,1.034

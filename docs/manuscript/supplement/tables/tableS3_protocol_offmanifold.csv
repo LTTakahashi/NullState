@@ -1,0 +1,27 @@
+protocol,ambiguous_novel_fraction,n_neural_cells
+Andersen 2020 (+DAPT off),0.004,1447
+Huang 2021,0.034,5104
+Pasca 2015,0.1,12825
+Andersen 2020,0.119,11208
+Esk 2020,0.174,4088
+Watanabe 2017,0.295,20682
+Birey 2017,0.319,3459
+Velasco 2019,0.323,586099
+Sawada 2020,0.346,1395
+Bhaduri 2020 (most dir.),0.352,35277
+Bhaduri 2020 (dir.),0.357,27968
+Quadrato 2017,0.378,47442
+Qian 2020,0.413,2767
+Qian 2016,0.461,44582
+Jo 2016,0.462,48815
+Lancaster 2014,0.493,159373
+Trujillo 2019,0.507,12646
+Quadrato 2023,0.526,13495
+Yoon 2019,0.564,135613
+Miura 2020,0.738,13621
+Pellegrini 2020 (hCO),0.784,9913
+Fiorenzano 2021 (silk+lam),0.836,13602
+Fiorenzano 2021 (std),0.852,64077
+Fiorenzano 2021 (silk),0.898,12430
+Xiang 2019,0.902,9444
+Pellegrini 2020 (hChPO),0.968,10181
