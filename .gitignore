@@ -56,3 +56,6 @@ Thumbs.db
 
 # Keep supplementary-material logs (override global *.log ignore)
 !docs/manuscript/supplement/**
+
+# Zenodo upload archive (regenerable from docs/manuscript/supplement/)
+docs/manuscript/NullState_supplementary_data_and_code_*.zip

@@ -93,3 +93,9 @@ authors on request / a Zenodo deposit prior to publication.
 - Software: scvi-tools 1.3.3, scanpy, anndata (see repository `env/environment.yml`); the pure
   pipeline helpers carry a passing unit-test suite (`tests/`) in the repository.
 - Provenance: this supplement corresponds to the manuscript on branch `phase1-aim23-manuscript`.
+
+## Citation / archive DOI
+
+This supplement is archived at Zenodo: **https://doi.org/10.5281/zenodo.21459720**
+
+Code repository: https://github.com/LTTakahashi/NullState (branch `phase1-aim23-manuscript`).
