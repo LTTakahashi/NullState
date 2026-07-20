@@ -184,7 +184,7 @@ mechanism rather than random misassignment.
 \emph{Protocol dependence (Fig.~\ref{fig:diag}c).} Across 26 differentiation protocols, the
 ambiguous-novel fraction spans nearly the entire range ($0.4\%$ to $96.8\%$; standard deviation
 $0.28$). Guided cortical protocols sit at the low end (e.g., DAPT-patterned cortico-motor
-\citep{andersen2020corticomotor}, $0.4\%$; \citealp{pasca2015cortical}, $10\%$), whereas
+\citep{andersen2020corticomotor}, $0.4\%$; \citep{pasca2015cortical}, $10\%$), whereas
 regionally divergent or barrier-forming protocols dominate the high end, choroid-plexus organoids
 \citep{pellegrini2020csf} reach $96.8\%$, midbrain-dopaminergic \citep{fiorenzano2021midbrain} and
 thalamic \citep{xiang2019thalamic} protocols $85$--$90\%$. The off-manifold signal thus partly tracks
@@ -475,7 +475,7 @@ are regenerable from the public inputs above using the pipeline in the repositor
 \clearpage
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig1.pdf}
+\includegraphics[width=\linewidth]{figs/fig1.png}
 \caption{\textbf{The NullState pipeline.} A harmonized first-trimester fetal reference (HDBCA $+$
 fetal-body atlas; \nref{} cells, raw UMIs) and the HNOCA organoid query (\nquery{} cells, 27 protocols)
 are co-embedded by scVI/scANVI followed by scArches reference surgery. Each organoid cell receives two
@@ -487,7 +487,7 @@ gates (Aim~1), lineage--dish disentanglement (Aim~2), and off-target geometry (A
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig2.pdf}
+\includegraphics[width=\linewidth]{figs/fig2.png}
 \caption{\textbf{Harmonized mapping and the off-target landscape (Aim~1).}
 (\textbf{a}) Six-state classification of all \nquery{} organoid cells; the off-manifold
 \emph{ambiguous-novel} state dominates ($38.4\%$).
@@ -502,7 +502,7 @@ $0.855$), and off-target power (C, green).}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.92\linewidth]{figs/fig3.pdf}
+\includegraphics[width=0.92\linewidth]{figs/fig3.png}
 \caption{\textbf{The off-manifold compartment is structured, not artifactual.}
 (\textbf{a}) Ambiguous-novel neural cells lose neural-progenitor identity and gain hypoxia and
 unfolded-protein/ER-stress signatures relative to clean on-target neural cells.
@@ -518,7 +518,7 @@ populations, not scatter).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig4.pdf}
+\includegraphics[width=\linewidth]{figs/fig4.png}
 \caption{\textbf{Lineage--dish disentanglement is not attainable (characterized negative; Aim~2).}
 (\textbf{a}) An origin-decoding adversary recovers organoid-versus-primary identity from the
 ``dish-stripped'' latent \zlin{} at $\geq\!0.998$ balanced accuracy across all interventions (ideal
@@ -532,7 +532,7 @@ encode source directly; decoder batch-conditioning cannot remove it.}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig5.pdf}
+\includegraphics[width=\linewidth]{figs/fig5.png}
 \caption{\textbf{Off-target geometry: distances clear the noise floor and their rank recovers primary
 lineage order (Aim~3).}
 (\textbf{a}) Background-latent (\zlin) embedding of the off-target populations; the four well-powered
@@ -550,7 +550,7 @@ is not a clean lineage distance.}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.96\linewidth]{figs/fig6.pdf}
+\includegraphics[width=0.96\linewidth]{figs/fig6.png}
 \caption{\textbf{Direct cross-atlas test of coverage gap versus divergence.} Ambiguous-novel and
 clean-on-target neural organoid cells were jointly integrated with an \emph{independent} prenatal
 cortical atlas (Velmeshev \emph{et al.}\ 2023 \citep{velmeshev2023cortex}).
