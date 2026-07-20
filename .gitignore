@@ -59,3 +59,6 @@ Thumbs.db
 
 # Zenodo upload archive (regenerable from docs/manuscript/supplement/)
 docs/manuscript/NullState_supplementary_data_and_code_*.zip
+
+# generated DOCX build intermediate (from build_docx.sh)
+docs/manuscript/main_docx.tex
