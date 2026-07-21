@@ -167,6 +167,17 @@ and (iii) the factor of interest has independently known structure so that succe
 distinguishable. Single-cell transcriptomics of in-vitro organoids versus primary fetal tissue provides
 exactly this (Fig.~\ref{fig:overview}).
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{figs/fig1.pdf}
+\caption{\textbf{The benchmark.} Two unaligned corpora, a $2{,}615{,}898$-cell primary reference and a
+$1{,}767{,}346$-cell in-vitro query, are co-embedded by variational reference surgery. Each query sample
+receives two calibrated scores (an off-manifold distance and a label-assignment entropy) that partition it
+into interpretable strata. The domains are near-disjoint by construction, which is what makes this a
+decisive test of the overlap boundary of Section~\ref{sec:setup}.}
+\label{fig:overview}
+\end{figure}
+
 \paragraph{Domains.} The primary domain is a harmonized reference of $2{,}615{,}898$ cells $\times$
 $61{,}497$ genes assembled from a first-trimester human brain atlas \citep{braun2023hdbca} and a fetal-body
 atlas \citep{cao2020fetal}, retrieved with raw counts from a public single-cell platform
@@ -191,6 +202,18 @@ which together partition the query into interpretable strata (Fig.~\ref{fig:land
 \emph{off-target} lineages that map confidently to a non-target identity ($5.3\%$), and quality-filtered
 ($4.9\%$). Full construction details are in Appendix~\ref{app:benchmark}.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig2.pdf}
+\caption{\textbf{Benchmark landscape.} (\textbf{a}) Query strata. (\textbf{b}) The two per-sample scores,
+with calibrated thresholds; the strata are regions of this plane. (\textbf{c}) Donor-level integration
+improves cross-batch mixing while preserving structure. (\textbf{d}) Sanity checks on the mapping. The
+\emph{off-manifold} stratum ($38.4\%$) is analyzed in Section~\ref{sec:decomposition}; the \emph{off-target}
+stratum ($5.3\%$) supplies the multi-population geometry of
+Sections~\ref{sec:estimable}--\ref{sec:precondition}.}
+\label{fig:landscape}
+\end{figure}
+
 The two strata that matter below are the \emph{off-manifold} stratum, the large ambiguous mass whose
 interpretation Section~\ref{sec:decomposition} addresses, and the \emph{off-target} stratum, a set of
 well-defined non-target lineages that provides the multi-population geometry used in
@@ -202,6 +225,18 @@ Sections~\ref{sec:estimable}--\ref{sec:precondition}.
 We train the shared-latent contrastive model with primary cells as background and query cells as target
 ($100{,}000$ each, $2{,}000$ highly variable genes, raw counts), then probe \zlin{} for domain
 decodability (Fig.~\ref{fig:negative}a).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig4.pdf}
+\caption{\textbf{Result 1: anchor-free invariance is not identified.} (\textbf{a}) A held-out adversary
+recovers the domain from the shared latent at $\geq 0.998$ balanced accuracy, unchanged by tripling the
+salient capacity or by conditioning the decoder on domain ($0.5$ is invariance; $<0.6$ would indicate
+success). (\textbf{b}) Training converges in every run, so the failure is structural rather than
+optimization-related. (\textbf{c}) Mechanism: with near-disjoint supports the encoder observes the domain
+directly, and decoder-side conditioning cannot remove what the encoder has already written.}
+\label{fig:negative}
+\end{figure}
 
 \paragraph{The result is decisive and intervention-robust.} The baseline model
 ($\dim \ziv = 10$) gives adversary balanced accuracy $0.998$. Tripling the salient capacity
@@ -263,6 +298,18 @@ $0.007$ to $0.026$); the remaining $130$ small-$N$ comparisons are correctly ret
 closest, though we emphasize in Section~\ref{sec:precondition} that separating grossly distinct lineages is
 a low bar and is an instrument check rather than a finding.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig5.pdf}
+\caption{\textbf{Results 2 and 3: translation-invariant functionals, and the limits of the cancellation.}
+(\textbf{a}) The four well-powered populations in the shared latent. (\textbf{b}) Pairwise
+sliced-Wasserstein distances. (\textbf{c}) Every well-powered pair clears its matched-$N$ noise floor by
+$14$ to $105\times$. (\textbf{d}) Multidimensional scaling of the distance matrix. The \emph{ordering}
+reproduces the reference geometry (distance-matrix $r=0.90$), whereas the individual distances are
+confounded by population-dependent offsets (mean offset cosine $0.15$; Section~\ref{sec:precondition}).}
+\label{fig:geometry}
+\end{figure}
+
 \section{Result 3: testing the precondition, and a graded answer}
 \label{sec:precondition}
 
@@ -321,6 +368,18 @@ proxy ($0.13 \rightarrow 0.78$ across quintiles); it varies nearly $240$-fold ac
 gradient is itself diagnostic: protocols targeting states the reference covers score low, while protocols
 targeting states it lacks score high, which is the signature of reference incompleteness.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{figs/fig3.pdf}
+\caption{\textbf{The off-manifold stratum is structured, not noise.} (\textbf{a}) Reduced canonical
+progenitor identity with elevated stress programs. (\textbf{b}) Frequency rises monotonically with a
+per-sample complexity proxy. (\textbf{c}) Nearly $240$-fold variation across $27$ protocols ($0.4\%$ to
+$96.8\%$): protocols targeting states the reference covers score low, those targeting states it lacks score
+high, the signature of reference incompleteness. (\textbf{d},\textbf{e}) The stratum concentrates in
+coherent clusters and occupies contiguous territory rather than scattering.}
+\label{fig:diagnostics}
+\end{figure}
+
 \paragraph{A direct test, and the confound it exposes.} The decisive test is whether off-manifold samples
 map onto an \emph{independent} reference of the same tissue. We projected them, together with a
 confidently-mapped control, onto an independent atlas \citep{velmeshev2023cortex}. The naive version of
@@ -338,6 +397,19 @@ percentile; Fig.~\ref{fig:crossatlas}). This is confound-controlled evidence for
 component over and above reference incompleteness, and it is obtained precisely by refusing to trust the
 uncalibrated measurement. We regard the pattern, naive control fails, calibrated contrast survives, as the
 transferable lesson.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/fig6.pdf}
+\caption{\textbf{Result 4: separating reference incompleteness from genuine divergence.} (\textbf{a}) The
+domain offset displaces \emph{every} query sample from an independent reference, including the
+confidently-mapped control (medians $4.0$ and $4.4$ versus $2.2$ within reference), so absolute
+``mapped-on'' fractions are uninterpretable and are not reported. (\textbf{b}) Calibrating against the
+control removes the shared displacement: off-manifold samples are further from the independent reference
+than controls (AUC $0.65$, Cliff's $\delta=0.30$), confound-controlled evidence of genuine divergence over
+and above reference incompleteness.}
+\label{fig:crossatlas}
+\end{figure}
 
 \section{Related work}
 
@@ -397,79 +469,6 @@ This work analyzes representation learning on public, de-identified cell-atlas d
 data collection. Its main societal relevance is indirect and, we believe, positive: it argues against
 over-reading model-derived ``invariant'' coordinates in scientific applications, a failure mode that can
 produce confident but unsupported biological conclusions. We identify no significant risk of harm.
-
-% ---------------------------- figures ----------------------------
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.92\linewidth]{figs/fig1.pdf}
-\caption{\textbf{The benchmark.} Two unaligned corpora, a $2{,}615{,}898$-cell primary reference and a
-$1{,}767{,}346$-cell in-vitro query, are co-embedded by variational reference surgery. Each query sample
-receives two calibrated scores (an off-manifold distance and a label-assignment entropy) that partition it
-into interpretable strata. The domains are near-disjoint by construction, which is what makes this a
-decisive test of the overlap boundary of Section~\ref{sec:setup}.}
-\label{fig:overview}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig2.pdf}
-\caption{\textbf{Benchmark landscape.} (\textbf{a}) Query strata. (\textbf{b}) The two per-sample scores,
-with calibrated thresholds; the strata are regions of this plane. (\textbf{c}) Donor-level integration
-improves cross-batch mixing while preserving structure. (\textbf{d}) Sanity checks on the mapping. The
-\emph{off-manifold} stratum ($38.4\%$) is analyzed in Section~\ref{sec:decomposition}; the \emph{off-target}
-stratum ($5.3\%$) supplies the multi-population geometry of
-Sections~\ref{sec:estimable}--\ref{sec:precondition}.}
-\label{fig:landscape}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig4.pdf}
-\caption{\textbf{Result 1: anchor-free invariance is not identified.} (\textbf{a}) A held-out adversary
-recovers the domain from the shared latent at $\geq 0.998$ balanced accuracy, unchanged by tripling the
-salient capacity or by conditioning the decoder on domain ($0.5$ is invariance; $<0.6$ would indicate
-success). (\textbf{b}) Training converges in every run, so the failure is structural rather than
-optimization-related. (\textbf{c}) Mechanism: with near-disjoint supports the encoder observes the domain
-directly, and decoder-side conditioning cannot remove what the encoder has already written.}
-\label{fig:negative}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig5.pdf}
-\caption{\textbf{Results 2 and 3: translation-invariant functionals, and the limits of the cancellation.}
-(\textbf{a}) The four well-powered populations in the shared latent. (\textbf{b}) Pairwise
-sliced-Wasserstein distances. (\textbf{c}) Every well-powered pair clears its matched-$N$ noise floor by
-$14$ to $105\times$. (\textbf{d}) Multidimensional scaling of the distance matrix. The \emph{ordering}
-reproduces the reference geometry (distance-matrix $r=0.90$), whereas the individual distances are
-confounded by population-dependent offsets (mean offset cosine $0.15$; Section~\ref{sec:precondition}).}
-\label{fig:geometry}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.92\linewidth]{figs/fig3.pdf}
-\caption{\textbf{The off-manifold stratum is structured, not noise.} (\textbf{a}) Reduced canonical
-progenitor identity with elevated stress programs. (\textbf{b}) Frequency rises monotonically with a
-per-sample complexity proxy. (\textbf{c}) Nearly $240$-fold variation across $27$ protocols ($0.4\%$ to
-$96.8\%$): protocols targeting states the reference covers score low, those targeting states it lacks score
-high, the signature of reference incompleteness. (\textbf{d},\textbf{e}) The stratum concentrates in
-coherent clusters and occupies contiguous territory rather than scattering.}
-\label{fig:diagnostics}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig6.pdf}
-\caption{\textbf{Result 4: separating reference incompleteness from genuine divergence.} (\textbf{a}) The
-domain offset displaces \emph{every} query sample from an independent reference, including the
-confidently-mapped control (medians $4.0$ and $4.4$ versus $2.2$ within reference), so absolute
-``mapped-on'' fractions are uninterpretable and are not reported. (\textbf{b}) Calibrating against the
-control removes the shared displacement: off-manifold samples are further from the independent reference
-than controls (AUC $0.65$, Cliff's $\delta=0.30$), confound-controlled evidence of genuine divergence over
-and above reference incompleteness.}
-\label{fig:crossatlas}
-\end{figure}
 
 \bibliographystyle{tmlr}
 \bibliography{refs}

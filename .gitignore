@@ -62,3 +62,6 @@ docs/manuscript/NullState_supplementary_data_and_code_*.zip
 
 # generated DOCX build intermediate (from build_docx.sh)
 docs/manuscript/main_docx.tex
+
+# TMLR anonymized supplement (regenerable)
+docs/tmlr/tmlr_supplementary.zip
