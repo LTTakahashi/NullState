@@ -1,0 +1,10 @@
+# bytecode
+__pycache__/
+*.pyc
+
+# transient run logs (key outputs are captured in FINDINGS_v2.md / README_v2.md)
+*.log
+
+# regenerable v1 demo figures
+figure_demo.png
+figure_frontier_demo.png
