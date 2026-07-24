@@ -96,17 +96,28 @@ def main():
     print(df.pivot_table(index="rho", columns="arm", values="joint",
                          aggfunc="mean").round(3).sort_index(ascending=False).to_string())
 
-    # the frontier statement: recovery flat, removal ~ rho, joint bounded by rho
-    print("\n=== FRONTIER (faithful encoder) ===")
+    # the RECOVERY-PRESERVING FRONTIER (not a bound). Two honest caveats:
+    #  * removal ~ rho is ALGEBRA, not a measured law: batch_removed is defined
+    #    as clip(1 - 2*(domain_balacc - 0.5)), and for the Bayes-optimal domain
+    #    classifier on two overlap-rho uniform marginals balanced accuracy is
+    #    exactly 1 - rho/2, so batch_removed == rho identically for ANY latent-
+    #    preserving encoder. (Verified in the module receipt.)
+    #  * removal is NOT hard-bounded by rho: run_mixing_bound.py pushes removal
+    #    to 0.40 at rho=0.2 and 0.27 at rho=0.05 -- ABOVE overlap -- but only by
+    #    collapsing recovery point-for-point (MCC 0.86 -> 0.67). So the frontier
+    #    is: the RECOVERY-PRESERVING optimum sits at removal ~ rho; exceeding it
+    #    costs recovery. It is a tradeoff curve, not "removal <= overlap".
+    print("\n=== RECOVERY-PRESERVING FRONTIER (faithful encoder) ===")
     g = df.groupby("rho").agg(recovery=("learned_mcc", "mean"),
                               gap=("gap_mcc", "mean"),
                               removal=("batch_removed", "mean"),
                               joint=("joint", "mean")).sort_index(ascending=False)
     print(g.round(3).to_string())
-    print("\n  recovery (MCC) is flat in rho; removal ~ rho (removing domain below "
-          "full overlap\n  would require destroying the domain-correlated biological "
-          "axis); the joint\n  min(recovery, removal) therefore tracks rho -- and that "
-          "bound is analytic\n  (removal <= overlap), not an emergent threshold.")
+    print("\n  recovery (MCC) is flat in rho; removal ~ rho is a metric-definition")
+    print("  identity (balacc=1-rho/2). The non-trivial content is that recovery")
+    print("  does NOT additionally degrade: the recovery-preserving optimum sits at")
+    print("  removal~rho, and (run_mixing_bound.py) an objective can push removal")
+    print("  ABOVE rho only by collapsing recovery point-for-point. Frontier, not bound.")
     print(f"\nDONE in {(time.time()-t0)/60:.1f} min -> {OUT}", flush=True)
 
 

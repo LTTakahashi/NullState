@@ -12,9 +12,11 @@ Result: the oracle transfer follows the closed form 1 - 4(1-rho)^3 to within
 ~0.02 across the whole range, and crosses zero at rho* = 1 - 4^(-1/3) = 0.370.
 
 Generalisation (the paper's practical message): kNN-R^2 and kNN-transfer recovery
-scores are near rotation-invariant, so they cannot detect entanglement, and any
-critical-threshold claim built on one in fixed embedding dimension is exposed to
-reading a geometry constant as a phenomenon. Check the oracle first.
+scores are EXACTLY rotation-invariant (up to almost-surely-unique neighbour sets),
+so they cannot detect entanglement, and any critical-threshold claim built on one
+is exposed to reading a geometry constant as a phenomenon. The constant depends on
+the marginal shape, embedding scale, and k (see verify_closed_form.py). Check the
+oracle first.
 """
 from __future__ import annotations
 import numpy as np

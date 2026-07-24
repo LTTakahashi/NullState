@@ -4,21 +4,27 @@
 
 **Rotation-invariant recovery metrics cannot detect entanglement, and a
 "critical threshold" derived from one can be a constant of the metric's own
-geometry.** The retired v1 probe reported a clean critical overlap ρ\* ≈ 0.37;
-that number is exactly **1 − 4^(−1/3)**, the zero-crossing of a kNN transfer
-score's extrapolation geometry (transfer = 1 − 4(1 − ρ)³) — present for an
-*oracle* embedding too, movable by no model and no data. With a rotation-
-sensitive matched-oracle metric and a DGP where support overlap (ρ) and removable
-batch magnitude (δ) are provably decoupled, the "cliff" vanishes: recovery is
-overlap-invariant; only *removal* is overlap-bounded, and removal ≤ overlap is an
-analytic identity confirmed from both directions. See
-[`FINDINGS_v2.md`](FINDINGS_v2.md) for the full argument and
-[`ABSTRACT_tmlr.md`](ABSTRACT_tmlr.md) for the paper framing.
+geometry.** kNN-R²/transfer scores are *exactly* invariant to any orthogonal
+transform of the embedding (up to measure-zero neighbour ties) — the same
+rotations that leave an isotropic-Gaussian prior invariant — so they are blind to
+the identifiability transformation. The retired v1 probe reported a clean
+critical overlap ρ\* ≈ 0.37; that is exactly **1 − 4^(−1/3)**, the zero-crossing
+of the kNN transfer curve (transfer = 1 − 4(1 − ρ)³), present for a perfectly
+identified *oracle* embedding. The constant is a recipe — marginal-, scale-, and
+k-dependent, stable only for compact-support marginals — not a universal. With a
+rotation-sensitive matched-oracle metric and a DGP where support overlap (ρ) and
+removable batch magnitude (δ) are provably decoupled, the "cliff" vanishes:
+recovery stays within a ρ-independent gap of the ceiling. What overlap bounds is
+only *removal*, and that is a recovery-preserving frontier (removal ≈ ρ is a
+metric-definition identity; a mixing objective can exceed it only by collapsing
+recovery), not a hard bound. See [`FINDINGS_v2.md`](FINDINGS_v2.md) for the full
+argument and [`ABSTRACT_tmlr.md`](ABSTRACT_tmlr.md) for the paper framing.
 
 This is the load-bearing, generalisable result: kNN-R² and kNN-transfer recovery
 scores are common in the integration and disentanglement literature, and any
-critical-threshold claim built on one in fixed embedding dimension is exposed to
-reading a geometry constant as a phenomenon.
+critical-threshold claim built on one should be checked against the metric's own
+geometry (for the reader's marginal, dimension, per-axis scale, and k) before it
+is read as a phenomenon.
 
 ## The rebuild
 

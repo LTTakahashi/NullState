@@ -58,9 +58,15 @@ from dgp2 import DGP2Config, generate
 from models2 import Model2Config, train_model2, vae_diagnostics
 from metrics2 import score_embedding, mcc, cca_score
 
+import os
+
 RHOS = [1.0, 0.8, 0.6, 0.4, 0.2, 0.05]
 DELTAS = [0.0, 2.0]                  # both inside the certified region
-SEEDS = [0, 1, 2, 3, 4]
+# Seeds and output CSV are env-overridable so the sweep can be sharded across
+# processes for parallel expansion (each shard writes its own CSV; merge after).
+# A power analysis on the first 5 seeds showed the pairwise MDE was ~d=2.0, so
+# the design was expanded to 25 seeds to reach MDE ~ d=0.8 (see power_analysis.py).
+SEEDS = [int(s) for s in os.environ.get("STAGE4_SEEDS", "0,1,2,3,4").split(",")]
 N = 2000
 EPOCHS = 150
 ARMS = {
@@ -68,7 +74,7 @@ ARMS = {
     "ivae_2env":   dict(mode="ivae", prior="cond", n_env=2),
     "conditional": dict(mode="conditional", prior="iso", n_env=5),
 }
-OUT = "results_stage4.csv"
+OUT = os.environ.get("STAGE4_OUT", "results_stage4.csv")
 
 
 def matched_oracle(t, z_learned, seed=0):

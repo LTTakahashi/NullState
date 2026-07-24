@@ -8,3 +8,6 @@ __pycache__/
 # regenerable v1 demo figures
 figure_demo.png
 figure_frontier_demo.png
+
+# transient per-shard sweep outputs (merged into results_stage4_n25.csv)
+results_stage4_s*.csv

@@ -1,20 +1,21 @@
 """
-THE REMOVAL BOUND, CONFIRMED FROM THE MIXING DIRECTION.
+THE RECOVERY-PRESERVING FRONTIER, from the mixing direction.
 
-The faithful-encoder frontier (run_frontier.py) shows removal ~ rho: a per-cell
-encoder removes the domain only as far as the biology overlaps. The obvious
-objection is that a faithful encoder simply is not TRYING to remove the domain.
-This script answers it by running an objective that IS: a moment-matching
-integration penalty (mean + covariance of the shared latent matched across
-domains) at increasing strength lambda, and asking whether it can push removal
-PAST the overlap ceiling.
+The faithful-encoder frontier (run_frontier.py) sits at removal ~ rho -- but that
+is a metric-definition identity (batch_removed = clip(1-2(balacc-0.5)) and the
+Bayes-optimal domain classifier on two overlap-rho uniforms has balacc = 1-rho/2,
+so batch_removed == rho for ANY latent-preserving encoder). The real question is
+whether an objective that ACTIVELY tries to mix can push removal PAST rho, and at
+what cost. This script runs a moment-matching integration penalty (mean +
+covariance of the shared latent matched across domains) at increasing strength
+lambda and records both removal and recovery.
 
-If removal stays ~ rho as lambda grows -- i.e. an objective explicitly maximising
-cross-domain mixing still cannot remove more domain than the biology shares --
-then removal <= overlap is not an artifact of a passive encoder; it is the bound
-biting from the opposite direction. That converts the "failed positive control"
-(a mixing proxy that would not mix) into a confirmation: at low overlap there is
-not enough shared support to mix THROUGH, no matter how hard the objective pushes.
+Finding: removal CAN exceed rho at high lambda (0.40 at rho=0.2, 0.27 at rho=0.05)
+-- so "removal <= overlap" is NOT a hard bound -- but only by collapsing recovery
+point-for-point (MCC 0.86 -> 0.67 at rho=0.05). At rho=0.05 no setting achieves
+both MCC > 0.8 and removed > 0.1. The honest statement is therefore a recovery-
+preserving frontier: the recovery-preserving optimum sits at removal ~ rho, and
+buying removal beyond it costs recovery.
 
 Recorded per run: MCC (recovery of the true latent), domain balanced-accuracy and
 batch_removed (removal), so the recovery cost of pushing lambda is visible too.
