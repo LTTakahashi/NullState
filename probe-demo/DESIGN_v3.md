@@ -1,5 +1,13 @@
 # Design: the hard regime — support overlap that governs *recovery*, not just removal
 
+> **Outcome (de-risked).** The domain-gauge mechanism (§ mechanism) gives a real
+> but *weak* effect, capped by an escape hatch — a faithful encoder can absorb a
+> domain-specific gauge. The clean, strong result is **objective-induced** and
+> needs no gauge: on the plain v2 DGP, an **alignment objective** collapses
+> recovery as overlap falls (CCA 0.99 → 0.60–0.73) while a faithful encoder stays
+> flat at 0.99. See "Option B confirmed" below. The failure is information loss,
+> so the correct metric is raw CCA, not the matched-oracle gap.
+
 ## Why v3 exists
 
 The v2 result is honest but its recovery-invariance null is **trivial for the
@@ -116,6 +124,52 @@ Honest current verdict: the domain-gauge is not, on this evidence, a clean
 strong probe for a *faithful* encoder; the phenomenon most likely lives in the
 alignment-objective regime (B), consistent with v2. The next experiment is the
 alignment arm, not more gauge seeds.
+
+## Option B confirmed (the clean, strong result) — no gauge needed
+
+[`derisk_alignment.py`](derisk_alignment.py): standard v2 DGP (no gauge), a
+moment-matching alignment penalty at strength λ, 4 seeds. **CCA (subspace
+recovery):**
+
+| ρ | λ=0 (faithful) | λ=200 | λ=1000 |
+|---|---|---|---|
+| 1.0 | 0.993 | 0.993 | 0.992 |
+| 0.6 | 0.994 | 0.984 | 0.850 |
+| 0.3 | 0.993 | 0.769 | 0.725 |
+| 0.1 | 0.993 | 0.597 | 0.707 |
+
+The faithful encoder is **flat at 0.993 across all ρ** (the v2 null); the
+alignment objective is free at full overlap but **collapses recovery as ρ falls**.
+The MCC drop (λ=1000 − λ=0) is overlap-dependent: −0.084 at ρ=1 (alignment even
+helps slightly), +0.21/+0.27/+0.18 at ρ=0.6/0.3/0.1.
+
+**Two methodological points, both borne out:**
+- The failure is **information loss (folding the shifted axis), not entanglement**:
+  when MCC collapses, CCA collapses with it (0.55/0.55), and the **matched-oracle
+  gap stays ~flat and noisy** — it is designed to subtract information loss, so it
+  is BLIND to this failure mode. The correct metric here is **raw CCA/MCC**, not
+  the entanglement gap. (This is itself a reportable point: the v2 estimand and
+  the v3 estimand must differ, because the two failure modes differ.)
+- The effect is **stochastic**: at low ρ some seeds fold and some do not (ρ=0.3,
+  λ=200 MCC ranged 0.55–0.98), so the mean CCA drop reflects a *rising probability
+  of collapse* as ρ falls. A proper build-out needs enough seeds to characterise
+  that distribution.
+
+**Conclusion.** "Support overlap governs recovery" is real and clean — but it is
+**objective-induced**: irrelevant to a faithful per-cell encoder (v2 null,
+equivalence-tested), decisive for the alignment-based integration objectives
+practitioners actually use (MNN/Harmony/scANVI-style). This completes the arc:
+whether overlap matters for recovery is a property of the *objective*, not the
+data or the representation. The domain gauge is unnecessary; the plain DGP plus
+an alignment objective is the cleaner probe.
+
+### Build-out (if pursued)
+Power to ≥25 seeds; add an adversarial (DANN) alignment arm alongside
+moment-matching; TOST the faithful arm as *equivalent* (flat) and test the
+alignment arm's CCA-drop slope as significantly negative; report the
+collapse-probability vs ρ. Metric = raw CCA (primary), MCC (secondary); the
+matched-oracle gap is explicitly the WRONG tool here and that contrast is worth
+stating.
 
 ## The DGP ([`dgp3.py`](dgp3.py), built and smoke-tested)
 
