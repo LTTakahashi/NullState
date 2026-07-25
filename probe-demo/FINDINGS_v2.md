@@ -130,17 +130,18 @@ coincide. Pooled invariance is the achievable form and is what makes the
 observable statistics ρ-invariant.*)
 
 **Recovery does not degrade with overlap** ([`run_stage4.py`](run_stage4.py) →
-[`analyze_stage4.py`](analyze_stage4.py); 180 runs). The matched-information MCC
-gap at δ=0:
+[`analyze_stage4.py`](analyze_stage4.py); 900 runs at 25 seeds/cell). The
+matched-information MCC gap at δ=0:
 
 | ρ | conditional | ivae_5env | ivae_2env |
 |---|---|---|---|
-| 1.00 | 0.096 | 0.083 | 0.114 |
-| 0.60 | 0.188 | 0.047 | 0.094 |
-| 0.20 | 0.141 | 0.109 | 0.135 |
-| 0.05 | 0.118 | 0.127 | 0.101 |
+| 1.00 | 0.097 | 0.079 | 0.093 |
+| 0.60 | 0.137 | 0.067 | 0.079 |
+| 0.20 | 0.084 | 0.112 | 0.093 |
+| 0.05 | 0.080 | 0.093 | 0.074 |
 
-The gap is small everywhere, non-monotone, and BIC-linear in every arm; the
+The gap is small everywhere (~0.05–0.14), non-monotone, and BIC-linear in every
+arm; the
 learned latent stays **within a ρ-independent gap (~0.10) of the matched-oracle
 ceiling at every ρ** (learned MCC 0.80–0.94). Satisfying the iVAE variability
 condition (ivae_5env, 5 = 2n+1) vs violating it (ivae_2env) made no clean
@@ -155,7 +156,20 @@ motivated expanding to **25 seeds/cell** (MDE d≈0.8), and report the confirmat
 analysis as an **equivalence test** (TOST) against the pre-registered SESOI of
 d=0.8, not a non-significant p ([`equivalence_test.py`](equivalence_test.py)).
 Adding seeds to a null reduces Type II error and cannot manufacture a false
-positive. *(n=25 confirmatory d and TOST verdict: filled from the merged run.)*
+positive. **At n=25 all three arms are statistically equivalent** — the gap change
+from ρ=1 to ρ=0.05 is significantly smaller than the pre-registered d=0.8 SESOI in
+every arm:
+
+| arm | n | D (gap) | d | 90% CI | verdict |
+|---|---|---|---|---|---|
+| conditional | 25 | −0.017 | −0.23 | [−0.053, +0.018] | EQUIVALENT |
+| ivae_2env | 25 | −0.018 | −0.21 | [−0.060, +0.023] | EQUIVALENT |
+| ivae_5env | 25 | +0.014 | +0.15 | [−0.029, +0.056] | EQUIVALENT |
+
+A *positive* null: recovery is overlap-invariant within a pre-specified bound, not
+merely "not significantly different". (Signs vary — the gap slightly *decreases*
+with falling ρ in two arms — underscoring there is no overlap-driven recovery
+loss.)
 
 **What overlap bounds is removal — as a recovery-preserving frontier, not a hard
 bound** ([`run_frontier.py`](run_frontier.py), [`run_mixing_bound.py`](run_mixing_bound.py)).
