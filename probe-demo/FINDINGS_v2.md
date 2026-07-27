@@ -212,6 +212,57 @@ removed > 0.1 — the recovery-preserving frontier. Note this refutes any "remov
 ≤ overlap" reading: removal *can* exceed overlap; what it cannot do is exceed it
 while preserving recovery.
 
+## When overlap *does* govern recovery: the objective, not the data
+
+The null above says a faithful per-cell encoder recovers the biology at every
+overlap. The complementary question — is there *any* setting where overlap
+governs recovery? — has a clean, powered answer: **yes, when the objective aligns
+domains.** The integration objectives practitioners actually use (MNN/Harmony/
+scANVI-style) do not encode each cell independently; they force the domains'
+latent distributions together. On the *same* v2 DGP, adding a moment-matching
+alignment penalty makes recovery overlap-dependent
+([`run_alignment_campaign.py`](run_alignment_campaign.py) →
+[`analyze_alignment.py`](analyze_alignment.py); 25 seeds/cell). CCA (subspace
+recovery), the primary metric:
+
+| ρ | faithful (λ=0) | mix (λ=200) | mix (λ=1000) | adversarial (DANN) |
+|---|---|---|---|---|
+| 1.00 | 0.99 | 0.99 | 0.99 | 0.99 |
+| 0.60 | 0.99 | 0.91 | 0.74 | 0.91 |
+| 0.20 | 0.99 | 0.85 | 0.75 | 0.94 |
+| 0.05 | 0.99 | 0.79 | 0.70 | 0.89 |
+
+- **Faithful:** CCA drop (ρ=1→0.05) = +0.000 [−0.000, +0.001] — **TOST-equivalent
+  to flat** (SESOI 0.05): recovery is overlap-invariant, confirming the null on
+  the recovery axis too.
+- **Alignment collapses recovery as ρ falls**, across *two* mechanisms and
+  dose-dependently: CCA drop +0.199 (d=1.67, slope p=3.6×10⁻¹¹) at moment-matching
+  λ=200; +0.291 (d=2.37, p=1.9×10⁻¹⁰) at λ=1000; and +0.101 (d=1.08, p=2.7×10⁻⁶)
+  for an adversarial (DANN) objective — so the effect is a property of *aligning*,
+  not of one penalty.
+- The effect is **stochastic**: the collapse probability P(CCA<0.85) rises from 0
+  at ρ=1 to 0.52 / 0.76 / 0.28 at ρ=0.05 (mix-200 / mix-1000 / adv), i.e. a
+  rising *fraction* of runs fold the axis as overlap shrinks. The faithful arm
+  never collapses (P=0 at every ρ).
+
+So "support overlap governs recovery" is real, but it is a property of the
+**objective**, not of the data or the representation: irrelevant to a faithful
+encoder, decisive for an aligner. This is the field's over-correction intuition,
+placed on a controlled ρ knob — and it *reinforces* the metric story rather than
+competing with it.
+
+**A methodological point that falls out.** This failure is **information loss**
+(the alignment folds the shifted axis, mapping A's exclusive region onto B's), not
+axis-rotation. So the **matched-oracle gap — the v2 estimand, built to isolate
+entanglement — is blind to it**: it stays flat (0.06–0.14) for *every* arm,
+including the collapsing ones, while CCA falls to 0.70, because it subtracts
+information loss by construction. The two regimes need different estimands: raw
+CCA/MCC for alignment-induced folding, the matched-oracle gap for entanglement;
+reporting the wrong one hides the effect. *(The domain-gauge probe that motivated
+this is documented in [`DESIGN_v3.md`](DESIGN_v3.md); it gave only a weak effect —
+a faithful encoder absorbs a domain-specific gauge — which is why the clean result
+is objective-induced and needs no gauge.)*
+
 ## The certificate
 
 The diagnostic that separates removable δ from support mismatch ρ *before*
@@ -236,18 +287,23 @@ metric one.
 > embedding. **The worked example:** with the metric fixed (rotation-sensitive,
 > matched-oracle) and ρ, δ decoupled, the shared latent is recovered within a
 > ρ-independent gap of the ceiling at all overlaps (a pre-registered,
-> equivalence-tested null in a deliberately clean regime); what overlap bounds is
-> only domain *removal*, and even that is a recovery-preserving frontier (removal
-> ≈ ρ is a metric-definition identity; mixing can exceed it only by destroying
-> recovery), not a hard bound.
+> equivalence-tested null); what overlap bounds is only domain *removal*, and even
+> that is a recovery-preserving frontier, not a hard bound. **The resolution of
+> "does overlap ever govern recovery":** yes — but it is a property of the
+> *objective*. A faithful encoder is overlap-invariant (equivalence-tested);
+> alignment objectives (moment-matching and adversarial) collapse recovery as
+> overlap falls (CCA 0.99→0.70, d up to 2.4, all p<10⁻⁵), via *information loss*
+> that the matched-oracle gap is blind to. Whether support overlap matters for
+> recovery is set by the objective, not the data or the representation.
 
 ## Honest limitations
 
-- **The recovery-invariance null may be trivial for this regime.** A within-
-  domain-decodable 1-D shift is recovered by any faithful encoder; the null is
-  the honest answer to v1's question but is *not* the paper's general
-  contribution (the metric result is). A higher-dimensional latent whose shifted
-  axis is not locally decodable is the natural next probe.
+- **The recovery-invariance null is regime-specific — by design, and now with its
+  complement.** A within-domain-decodable shift is recovered by any faithful
+  encoder, so the null is the honest answer to v1's question for that encoder; the
+  paired alignment result shows the *other* side (overlap collapses recovery once
+  the objective aligns), so together they bound the phenomenon rather than leaving
+  it open. The metric result remains the domain-general contribution.
 - **removal ≈ ρ is algebra**, not a measured law (balacc = 1 − ρ/2), and removal
   is not hard-bounded by ρ; only the recovery-preserving optimum is.
 - **The geometry constant is not universal**: marginal-, scale-, and k-dependent,
@@ -266,5 +322,6 @@ python run_stage4.py   && python analyze_stage4.py     # main result (5-seed pil
 python power_analysis.py                                # MDE: n=5 d~2.0, n=25 d~0.8
 python run_frontier.py && python run_mixing_bound.py   # recovery-preserving frontier, both directions
 python equivalence_test.py results_stage4_n25.csv 0.8  # TOST vs pre-registered SESOI (needs merged n=25)
+python run_alignment_campaign.py && python analyze_alignment.py  # objective-induced overlap-dependence
 python certificate.py                                  # certificate validation
 ```
