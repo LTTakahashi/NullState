@@ -9,37 +9,63 @@ is a claim about matching the estimand to the failure mode, and we demonstrate i
 twice — once on a standard metric, and once on a metric we built ourselves,
 deliberately, with a correctness argument and a passing gate.
 
-**Demonstration 1 — a standard metric, blind to rotation.** kNN-R² and
-kNN-transfer scores depend on the embedding only through its neighbour graph,
-which an orthogonal map preserves exactly; their invariance class therefore
-contains the rotations that leave an isotropic-Gaussian prior invariant while
-scrambling its axes — i.e. precisely the non-identifiability they are being used
-to test for. The consequence is not merely insensitivity: a clean,
-published-looking "critical support overlap" ρ\* ≈ 0.37 turns out to be **exactly
-1 − 4^(−1/3)**, the zero-crossing of the metric's own extrapolation geometry,
-reproduced on a *perfectly identified oracle embedding*.
+**Demonstration 1 — a standard metric, blind to the orthogonal gauge.** kNN-R²
+and kNN-transfer scores depend on the embedding only through its k-nearest-
+neighbour *sets*, which any similarity transform preserves exactly; they are
+therefore **bit-identically** invariant to rotation (Δ = 0 across 25 angles), and
+likewise to reflection, translation and global rescaling. That is enough to void
+any result whose failure mode under test is a rotation — including the rotational
+gauge freedom of an isotropic-Gaussian prior under an unconstrained decoder.
 
-**Demonstration 2 — our own metric, blind to information loss.** To fix
-Demonstration 1 we built a rotation-sensitive matched-information oracle gap:
+*Two precisions we got wrong first and had to correct.* (i) This class is **not**
+the prior's full non-identifiability class, and the two are **non-nested**: the
+measure-preserving swirl θ → θ + c‖t‖² leaves N(0, I₂) exactly invariant yet kNN-R²
+plainly *sees* it (0.94 / 0.79 / 0.53 for c = 0.3 / 0.9 / 2.0), while kNN's class
+contains translations and rescalings that are not prior symmetries. Only the
+linear part, O(d), is shared. (ii) Cross-domain transfer is invariant only to a
+**common** gauge: rotating one domain alone is highly visible (0.994 → 0.449 at
+45°, → −0.881 at 90°). Exactness also requires uniform weights and the L2 metric.
+
+A *separate* failure of the same metric — an extrapolation artifact, not the
+blindness above — is that a clean, published-looking "critical support overlap"
+ρ\* ≈ 0.37 turns out to be **exactly 1 − 4^(−1/3)**, the zero-crossing of the
+metric's own extrapolation geometry, reproduced on a *perfectly identified oracle
+embedding*. One metric, two independent ways to mislead.
+
+**Demonstration 2 — our own metric, with a blind spot we had to be shown.** To
+fix Demonstration 1 we built a rotation-sensitive matched-information oracle gap:
 noise the true latent until it carries the same information (CCA) as the learned
 embedding, then difference MCC, so the residual is attributable to entanglement
-rather than to a noisier embedding. It is correct for what it was built for — and
-it is **blind to information loss**. When alignment objectives destroy recovery by
-folding the shifted axis — information loss, the failure mode practitioners
-actually care about — the gap reads ≈0 while raw CCA collapses 0.99 → 0.70. Had
-we reported only our own estimand, we would have concluded "no effect."
+rather than to a noisier embedding. It passed a correctness argument and a gate.
+Yet when alignment objectives destroyed recovery, the gap read ≈0 while raw CCA
+collapsed 0.99 → 0.70: had we reported only our own estimand we would have
+concluded "no effect."
 
-Adversarial verification then sharpened this into something better than a blind
-spot: **the gap is not an independent estimand at all — it is identically
-CCA − MCC** (verified to max |Δ| = 0.0001 across every corruption below). The
-reason is structural: the oracle family is isotropic noise on the *true* latent,
-so its canonical directions are the coordinate axes and every oracle satisfies
-MCC = CCA; matching the oracle's information therefore forces
-MCC(oracle) = CCA(z), giving gap = CCA(z) − MCC(z). That *explains* the blindness
-— information loss lowers CCA and MCC together and cancels in the difference —
-and says exactly what the estimand does measure: the excess of linear-subspace
-recovery over axis-wise recovery, i.e. "right subspace, wrong axes." The
-bisection machinery we built was unnecessary.
+Adversarial verification then produced something better than a blind spot — and
+corrected our first explanation of it. **The gap is not an independent estimand
+at all: it equals CCA − MCC identically** (max |Δ| = 0.0001 across every
+corruption below). The oracle family is isotropic noise on the *true* latent, so
+its canonical directions are the coordinate axes and every oracle satisfies
+MCC = CCA; matching information forces MCC(oracle) = CCA(z), leaving
+gap = CCA(z) − MCC(z). Its exact zero set is therefore **{MCC = CCA}: the
+axis-factorised maps**, where each recovered coordinate is a function of a single
+true coordinate.
+
+> **A correction we owed ourselves.** We first wrote that the gap is "blind to
+> information loss." That is **false**, and the table below now contains the
+> counterexamples. Our three original information-loss rows merely happened to be
+> *axis-aligned*. Information loss that is **not** axis-factorised produces a
+> large gap: common-mode noise scores **0.216** and collapsing a *rotated* axis
+> **0.142** — the former comparable to, and at higher noise exceeding, the 45°
+> rotation's 0.293 that the table presents as the entanglement signature. The
+> correct characterisation is axis-factorisation, not information loss. The
+> alignment collapse evaded the gap because that particular failure is
+> *approximately axis-factorised*, which is a fact about the experiment, not a
+> general property of the estimand.
+
+What the gap does measure is the excess of linear-subspace recovery over axis-wise
+recovery — "right subspace, wrong axes." The bisection machinery we built was
+unnecessary.
 
 The second demonstration is the more persuasive one, because the blind spot
 survived a correctness argument, a gate, and our own scrutiny. The lesson is
@@ -61,13 +87,17 @@ means that estimand is blind to that corruption.
 | **rotate 45°** | **entanglement** | **0.996** | **1.000** | 0.707 | 0.685 | 0.000 | 0.293 |
 | **shear** | **entanglement** | **0.996** | **1.000** | 0.887 | 0.878 | 0.508 | 0.113 |
 | monotone nonlinear | reparametrisation | 0.987 | 0.885 | 0.885 | **1.000** | **0.997** | **−0.000** |
-| **isotropic noise** | **information loss** | 0.725 | 0.857 | 0.857 | 0.846 | 0.838 | **0.000** |
-| **fold axis** | **information loss** | −0.062 | 0.531 | 0.531 | 0.507 | 0.594 | **0.000** |
-| **collapse axis** | **information loss** | −0.070 | 0.502 | 0.500 | 0.502 | 0.801 | **0.001** |
+| **isotropic noise** | info loss, *axis-factorised* | 0.725 | 0.857 | 0.857 | 0.846 | 0.838 | **0.000** |
+| **fold axis** | info loss, *axis-factorised* | −0.062 | 0.531 | 0.531 | 0.507 | 0.594 | **0.000** |
+| **collapse axis** | info loss, *axis-factorised* | −0.070 | 0.502 | 0.500 | 0.502 | 0.801 | **0.001** |
+| common-mode noise | info loss, *mixed* | 0.537 | 0.658 | 0.442 | 0.428 | 0.038 | 0.216 |
+| collapse *rotated* axis | info loss, *mixed* | 0.482 | 0.500 | 0.358 | 0.356 | 0.001 | 0.142 |
 
 The blindness is complementary, which is the point: **kNN-R² and CCA cannot see
-entanglement; the matched-oracle gap cannot see information loss; MCC-Spearman
-and DCI cannot see monotone reparametrisation.** No single estimand covers the
+a rotation; the matched-oracle gap cannot see an axis-factorised map; MCC-Spearman
+and DCI cannot see a monotone reparametrisation.** (Note the last two rows: they
+are the reason the gap's blind spot is *axis-factorisation*, not information loss
+— non-factorised information loss is plainly visible to it.) No single estimand covers the
 space, so "we measured recovery" is not a well-formed claim without naming the
 estimand and its invariance class.
 
@@ -88,7 +118,7 @@ Invariance classes, stated:
 | CCA | any affine map with **injective** linear part (⊋ GL(d): also injective lifts to higher dimension, appended noise coordinates, duplicated coordinates, translations). Blind to *linear* entanglement only — information-preserving *nonlinear* axis mixing is visible |
 | MCC-Pearson | permutation + per-axis affine |
 | MCC-Spearman | permutation + per-axis *monotone* reparametrisation |
-| matched-oracle gap | = CCA − MCC identically; blind to information loss because it cancels in the difference |
+| matched-oracle gap | = CCA − MCC identically; zero set is {MCC = CCA} = the **axis-factorised** maps (*not* information loss — see the last two table rows) |
 
 This generalises past this probe: kNN-R² and kNN-transfer recovery scores are
 common in the integration and disentanglement literature, and any

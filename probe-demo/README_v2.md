@@ -7,10 +7,14 @@ invariance class, and a result is an artifact whenever the failure mode under
 test lives inside it.** Demonstrated twice, on a standard metric and on one we
 built ourselves.
 
-1. **A manufactured threshold.** kNN recovery scores are *exactly* invariant to
-   the similarity group — including the rotations that leave an
-   isotropic-Gaussian prior invariant, i.e. the very non-identifiability they are
-   used to test. The retired v1 probe's "critical overlap" ρ\* ≈ 0.37 is exactly
+1. **A manufactured threshold.** kNN recovery scores are *exactly* (bit-
+   identically) invariant to the similarity group — including the orthogonal
+   gauge freedom O(d) of an isotropic-Gaussian prior. *(Not the prior's full
+   non-identifiability class: the two are non-nested — a measure-preserving
+   swirl leaves N(0,I) invariant yet kNN sees it; and cross-domain transfer is
+   invariant only to a **common** gauge.)* Separately — an extrapolation
+   artifact, not the blindness — the retired v1 probe's "critical overlap"
+   ρ\* ≈ 0.37 is exactly
    **1 − 4^(−1/3)**, the zero-crossing of the kNN transfer curve
    (transfer = 1 − 4(1 − ρ)³), reproduced on a *perfectly identified oracle
    embedding*. It is a recipe, not a universal: fixed only at a given marginal
@@ -18,9 +22,11 @@ built ourselves.
    ρ\* runs 0.377 → 0.808; a Gaussian marginal has no stable threshold at all).
 2. **A hidden collapse, in our own metric.** The rotation-sensitive
    matched-information oracle gap we built to fix (1) turns out to equal
-   **CCA − MCC identically** — so it is blind to information loss, which cancels
-   in the difference, and it misses an entire real alignment-induced recovery
-   collapse (CCA 0.99 → 0.70) that raw CCA sees plainly.
+   **CCA − MCC identically**, so its zero set is the **axis-factorised** maps —
+   and it missed an entire real alignment-induced recovery collapse
+   (CCA 0.99 → 0.70) that raw CCA sees plainly. *(We first mis-stated this as
+   "blind to information loss"; it is not — non-axis-factorised information loss
+   scores as high as a 45° rotation. Correction recorded in FINDINGS.)*
 
 With the estimands matched to the failure modes: recovery is **overlap-invariant
 for a faithful per-cell encoder** (pre-registered, equivalence-tested null) and
@@ -95,7 +101,7 @@ worst within-domain decodability ratio is 0.983 at δ=2 but 0.964/0.925/0.837 at
 
 ### Stage 2 — a metric that can see entanglement
 
-v1 scored with kNN-regression R², which is ~rotation-invariant: it gives a
+v1 scored with kNN-regression R², which is *exactly* rotation-invariant: it gives a
 45°-rotated (entangled) latent the same score as the identity, so it could
 *never* detect the phenomenon. Worse, its cross-domain transfer measured kNN
 extrapolation — its "critical ρ*=0.370" is exactly `1-4^(-1/3)`, a geometry

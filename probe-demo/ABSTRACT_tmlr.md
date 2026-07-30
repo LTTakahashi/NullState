@@ -19,11 +19,13 @@ reported result is an artifact whenever the failure mode under test lies inside
 that class.**
 
 **A manufactured threshold.** k-nearest-neighbour recovery scores depend on the
-embedding only through its neighbour sets, so they are *exactly* invariant to the
-similarity group — including the rotations that leave an isotropic-Gaussian prior
-invariant while scrambling its axes, i.e. precisely the non-identifiability they
-are used to test for. The consequence is not mere insensitivity. In a controlled
-support-overlap study, such a score produces a clean, published-looking "critical
+embedding only through its k-nearest-neighbour sets, so they are *exactly*
+(bit-identically) invariant to the similarity group — including the orthogonal
+gauge freedom O(d) of an isotropic-Gaussian prior, enough to void any result whose
+failure mode under test is a rotation. (The two classes are non-nested, not
+identical, and cross-domain transfer is invariant only to a *common* gauge.) A
+second, independent failure of the same metric is an extrapolation artifact: in a
+controlled support-overlap study it produces a clean, published-looking "critical
 overlap" ρ\* ≈ 0.37 that we derive in closed form: for a one-dimensional uniform
 shift the large-sample cross-domain transfer is R² = 1 − 4(1 − ρ)³, so the
 apparent threshold is ρ\* = 1 − 4^(−1/3) — the zero-crossing of the metric's own
@@ -39,12 +41,17 @@ stable threshold at all, its crossing drifting toward 0 as n grows.
 introduced a rotation-sensitive *matched-information oracle gap*: noise the true
 latent until it matches the learned embedding's information (CCA), then difference
 MCC, so the residual is attributable to entanglement rather than to a noisier
-embedding. It passed a correctness argument and a gate — and it is blind to
-**information loss**. Adversarial verification sharpened this: the gap is not an
-independent estimand at all, but equals **CCA − MCC identically** (max deviation
-1×10⁻⁴), because isotropic-noise oracles are coordinate-aligned and so satisfy
-MCC = CCA. That explains the blindness — information loss lowers both terms and
-cancels — and it means an entire real effect can be invisible to it.
+embedding. It passed a correctness argument and a gate — and it still concealed a real
+effect. Adversarial verification explained why: the gap is not an independent
+estimand at all, but equals **CCA − MCC identically** (max deviation 1×10⁻⁴),
+because isotropic-noise oracles are coordinate-aligned and so satisfy MCC = CCA.
+Its exact zero set is therefore the **axis-factorised** maps — each recovered
+coordinate a function of one true coordinate. (We first mis-stated this as
+"blind to information loss"; that is false, and we report the counterexamples:
+non-axis-factorised information loss such as common-mode noise scores as high as
+the 45° rotation we present as the entanglement signature.) The alignment failure
+happened to be approximately axis-factorised, so an entire real effect was
+invisible to it.
 
 **What the estimands, once matched to the failure modes, actually show.** In a
 data-generating process where biological support overlap (ρ) and removable batch
@@ -54,8 +61,8 @@ a pre-registered null, equivalence-tested (TOST) against the pre-registered effe
 size across three model families at 25 seeds per cell, after a power analysis
 showed the 5-seed pilot could only detect d ≈ 2. For the **alignment objectives
 practitioners actually run**, recovery collapses once overlap is reduced: CCA
-0.99 → 0.70, Cohen's d up to 2.4, and the failure is exactly the information loss
-the oracle gap cannot see. We report the shape honestly — only one of four arms
+0.99 → 0.70, Cohen's d up to 2.4 — and the failure is approximately
+axis-factorised, so it is exactly what the oracle gap cannot see. We report the shape honestly — only one of four arms
 is strictly monotone in ρ and only one licenses a segmented-over-linear fit, so
 we claim a *large but saturating* degradation, not a threshold; the clean
 dose-response is in alignment strength, not in overlap. An adversarial (DANN)
