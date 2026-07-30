@@ -1,30 +1,35 @@
-# Support-overlap identifiability probe — v2
+# Every recovery estimand has an invariance class
 
-## The finding, first
+## The thesis, first
 
-**Rotation-invariant recovery metrics cannot detect entanglement, and a
-"critical threshold" derived from one can be a constant of the metric's own
-geometry.** kNN-R²/transfer scores are *exactly* invariant to any orthogonal
-transform of the embedding (up to measure-zero neighbour ties) — the same
-rotations that leave an isotropic-Gaussian prior invariant — so they are blind to
-the identifiability transformation. The retired v1 probe reported a clean
-critical overlap ρ\* ≈ 0.37; that is exactly **1 − 4^(−1/3)**, the zero-crossing
-of the kNN transfer curve (transfer = 1 − 4(1 − ρ)³), present for a perfectly
-identified *oracle* embedding. The constant is a recipe — marginal-, scale-, and
-k-dependent, stable only for compact-support marginals — not a universal. With a
-rotation-sensitive matched-oracle metric and a DGP where support overlap (ρ) and
-removable batch magnitude (δ) are provably decoupled, the "cliff" vanishes:
-recovery stays within a ρ-independent gap of the ceiling. What overlap bounds is
-only *removal*, and that is a recovery-preserving frontier (removal ≈ ρ is a
-metric-definition identity; a mixing objective can exceed it only by collapsing
-recovery), not a hard bound. See [`FINDINGS_v2.md`](FINDINGS_v2.md) for the full
-argument and [`ABSTRACT_tmlr.md`](ABSTRACT_tmlr.md) for the paper framing.
+**A recovery metric is defined by what it cannot see: every estimand has an
+invariance class, and a result is an artifact whenever the failure mode under
+test lives inside it.** Demonstrated twice, on a standard metric and on one we
+built ourselves.
 
-This is the load-bearing, generalisable result: kNN-R² and kNN-transfer recovery
-scores are common in the integration and disentanglement literature, and any
-critical-threshold claim built on one should be checked against the metric's own
-geometry (for the reader's marginal, dimension, per-axis scale, and k) before it
-is read as a phenomenon.
+1. **A manufactured threshold.** kNN recovery scores are *exactly* invariant to
+   the similarity group — including the rotations that leave an
+   isotropic-Gaussian prior invariant, i.e. the very non-identifiability they are
+   used to test. The retired v1 probe's "critical overlap" ρ\* ≈ 0.37 is exactly
+   **1 − 4^(−1/3)**, the zero-crossing of the kNN transfer curve
+   (transfer = 1 − 4(1 − ρ)³), reproduced on a *perfectly identified oracle
+   embedding*. It is a recipe, not a universal: fixed only at a given marginal
+   shape, dimension, per-axis scale and k (change the per-axis scale alone and
+   ρ\* runs 0.377 → 0.808; a Gaussian marginal has no stable threshold at all).
+2. **A hidden collapse, in our own metric.** The rotation-sensitive
+   matched-information oracle gap we built to fix (1) turns out to equal
+   **CCA − MCC identically** — so it is blind to information loss, which cancels
+   in the difference, and it misses an entire real alignment-induced recovery
+   collapse (CCA 0.99 → 0.70) that raw CCA sees plainly.
+
+With the estimands matched to the failure modes: recovery is **overlap-invariant
+for a faithful per-cell encoder** (pre-registered, equivalence-tested null) and
+**collapses under alignment objectives** as overlap falls. Whether support
+overlap matters for recovery is set by the *objective* — and which of those two
+facts you observe is set by the *estimand*. See
+[`FINDINGS_v2.md`](FINDINGS_v2.md) for the full argument,
+[`estimand_taxonomy.py`](estimand_taxonomy.py) for the invariance-class table,
+and [`ABSTRACT_tmlr.md`](ABSTRACT_tmlr.md) for the paper framing.
 
 ## The rebuild
 
@@ -36,7 +41,9 @@ discipline is a chain of **hard gates**: no stage runs until the stage below has
 provably passed. It answers the underlying question — is recovery of the shared
 latent governed by support overlap ρ, or only by removable batch magnitude δ? —
 honestly, with the null pre-registered as a publishable outcome. The short
-answer: recovery is governed by *neither* here; overlap bounds only removal.
+answer: **it depends on the objective.** For a faithful per-cell encoder recovery
+is governed by neither (overlap bounds only *removal*); for an alignment
+objective, overlap governs recovery directly.
 
 ## Pipeline and gates
 
@@ -46,7 +53,8 @@ answer: recovery is governed by *neither* here; overlap bounds only removal.
 | 2. metrics | [`metrics2.py`](metrics2.py) | [`verify_stage2.py`](verify_stage2.py) — metric ceiling flat in ρ | **PASS** |
 | 3. models | [`models2.py`](models2.py) | [`verify_stage3.py`](verify_stage3.py) — trains as a VAE; conditioning live | **PASS** |
 | 4. main sweep | [`run_stage4.py`](run_stage4.py) | [`analyze_stage4.py`](analyze_stage4.py) — pre-registered decision rule | see results |
-| 5. certificate | [`certificate.py`](certificate.py) | validated in `__main__` | anchor-based version passes |
+| 5. certificate | [`certificate.py`](certificate.py) | validated in `__main__` | anchor version passes (**synthetic-only**) |
+| 6. estimands | [`estimand_taxonomy.py`](estimand_taxonomy.py) | gap == CCA − MCC identity | **the thesis** |
 
 ### Stage 1 — the DGP is the whole ballgame (and is where v1 died)
 
@@ -119,7 +127,10 @@ adversarial variant is vestigial in v2 and structurally weak in the saturated
 ### Stage 4 — the claim, tested against a pre-registered rule
 
 Primary estimand: the **matched-information MCC gap** = MCC(oracle matched to the
-learned embedding's CCA) − MCC(learned). Isotropic noise cannot mix axes, so at
+learned embedding's CCA) − MCC(learned). *(Post-hoc: this reduces exactly to
+CCA − MCC — see the thesis above — so it measures entanglement and is blind to
+information loss. Correct for Stage 4's question; wrong for the alignment
+regime, which needs raw CCA.)* Isotropic noise cannot mix axes, so at
 matched information the gap is attributable to entanglement alone — never to the
 model simply having a noisier embedding (the confound a raw score hides, and
 what audit finding B4 demanded be fixed). Arms: `ivae_5env` (condition
@@ -149,7 +160,8 @@ unsupervised batch metrics.
 ## Reproduce
 
 ```bash
-python verify_geometry_constant.py  # the headline receipt (v1 threshold = 1-4^(-1/3))
+python estimand_taxonomy.py         # THE THESIS: the invariance-class table
+python verify_geometry_constant.py  # demo 1 receipt (v1 threshold = 1-4^(-1/3))
 python verify_dgp2.py     # Stage-1 gate (must pass first)
 python verify_stage2.py   # Stage-2 gate
 python verify_stage3.py   # Stage-3 gate
@@ -157,6 +169,8 @@ python run_stage4.py      # main sweep -> results_stage4.csv  (resumable)
 python analyze_stage4.py  # verdict against the pre-registered rule
 python run_frontier.py    # recovery-vs-removal frontier (removal ~ rho)
 python run_mixing_bound.py# removal bound confirmed from the mixing direction
+python run_alignment_campaign.py && python analyze_alignment.py       # demo 2: alignment collapse
+python analyze_alignment_shape.py   # curve shape: monotonicity + segmented-vs-linear BIC
 python certificate.py     # Stage-5 validation table
 ```
 

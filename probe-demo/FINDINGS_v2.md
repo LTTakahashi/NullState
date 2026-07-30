@@ -1,22 +1,99 @@
-# When a critical threshold is a geometry constant
+# Every recovery estimand has an invariance class
 
-## Headline
+## The thesis
 
-**Rotation-invariant recovery metrics cannot detect entanglement, and a
-"critical threshold" derived from one can be a constant of the metric's own
-geometry rather than a property of the data or the model.** We demonstrate this
-with a case where a clean, published-looking critical overlap ρ\* ≈ 0.37 turned
-out to be **exactly 1 − 4^(−1/3)**, the zero-crossing of a k-nearest-neighbour
-transfer score's extrapolation geometry — a number no model, and no amount of
-data, can move. When the metric is replaced with a rotation-sensitive
-matched-oracle estimand and the data-generating process is rebuilt so that
-support overlap (ρ) and removable batch magnitude (δ) are provably decoupled,
-the "cliff" disappears entirely, and the actual structure is an analytic one.
+**A recovery metric is defined by what it cannot see. Every estimand has an
+invariance class, and a reported result is an artifact whenever the failure mode
+under test lives inside that class.** This is not a claim about bad metrics; it
+is a claim about matching the estimand to the failure mode, and we demonstrate it
+twice — once on a standard metric, and once on a metric we built ourselves,
+deliberately, with a correctness argument and a passing gate.
 
-This generalises past the probe. kNN-R² and kNN-transfer recovery scores are
-common in the integration and disentanglement literature; any critical-threshold
-claim built on one, in fixed embedding dimension, is exposed to reading a
-geometry constant as a phenomenon, and almost nobody checks.
+**Demonstration 1 — a standard metric, blind to rotation.** kNN-R² and
+kNN-transfer scores depend on the embedding only through its neighbour graph,
+which an orthogonal map preserves exactly; their invariance class therefore
+contains the rotations that leave an isotropic-Gaussian prior invariant while
+scrambling its axes — i.e. precisely the non-identifiability they are being used
+to test for. The consequence is not merely insensitivity: a clean,
+published-looking "critical support overlap" ρ\* ≈ 0.37 turns out to be **exactly
+1 − 4^(−1/3)**, the zero-crossing of the metric's own extrapolation geometry,
+reproduced on a *perfectly identified oracle embedding*.
+
+**Demonstration 2 — our own metric, blind to information loss.** To fix
+Demonstration 1 we built a rotation-sensitive matched-information oracle gap:
+noise the true latent until it carries the same information (CCA) as the learned
+embedding, then difference MCC, so the residual is attributable to entanglement
+rather than to a noisier embedding. It is correct for what it was built for — and
+it is **blind to information loss**. When alignment objectives destroy recovery by
+folding the shifted axis — information loss, the failure mode practitioners
+actually care about — the gap reads ≈0 while raw CCA collapses 0.99 → 0.70. Had
+we reported only our own estimand, we would have concluded "no effect."
+
+Adversarial verification then sharpened this into something better than a blind
+spot: **the gap is not an independent estimand at all — it is identically
+CCA − MCC** (verified to max |Δ| = 0.0001 across every corruption below). The
+reason is structural: the oracle family is isotropic noise on the *true* latent,
+so its canonical directions are the coordinate axes and every oracle satisfies
+MCC = CCA; matching the oracle's information therefore forces
+MCC(oracle) = CCA(z), giving gap = CCA(z) − MCC(z). That *explains* the blindness
+— information loss lowers CCA and MCC together and cancels in the difference —
+and says exactly what the estimand does measure: the excess of linear-subspace
+recovery over axis-wise recovery, i.e. "right subspace, wrong axes." The
+bisection machinery we built was unnecessary.
+
+The second demonstration is the more persuasive one, because the blind spot
+survived a correctness argument, a gate, and our own scrutiny. The lesson is
+general: **choose the estimand whose invariance class excludes the failure mode
+under test, and state the class explicitly.**
+
+## The taxonomy
+
+Measured directly ([`estimand_taxonomy.py`](estimand_taxonomy.py)): corrupt the
+*true* latent in exactly one way, score every estimand. No training and no DGP —
+these are properties of the estimands themselves. A cell at its identity value
+means that estimand is blind to that corruption.
+
+| corruption | failure mode | kNN-R² | CCA | MCC-P | MCC-S | DCI-D | oracle gap |
+|---|---|---|---|---|---|---|---|
+| identity | — | 0.996 | 1.000 | 1.000 | 1.000 | 0.997 | −0.000 |
+| permute axes | nuisance | 0.996 | 1.000 | 1.000 | 1.000 | 0.998 | −0.000 |
+| per-axis rescale | nuisance | 0.999 | 1.000 | 1.000 | 1.000 | 0.997 | −0.000 |
+| **rotate 45°** | **entanglement** | **0.996** | **1.000** | 0.707 | 0.685 | 0.000 | 0.293 |
+| **shear** | **entanglement** | **0.996** | **1.000** | 0.887 | 0.878 | 0.508 | 0.113 |
+| monotone nonlinear | reparametrisation | 0.987 | 0.885 | 0.885 | **1.000** | **0.997** | **−0.000** |
+| **isotropic noise** | **information loss** | 0.725 | 0.857 | 0.857 | 0.846 | 0.838 | **0.000** |
+| **fold axis** | **information loss** | −0.062 | 0.531 | 0.531 | 0.507 | 0.594 | **0.000** |
+| **collapse axis** | **information loss** | −0.070 | 0.502 | 0.500 | 0.502 | 0.801 | **0.001** |
+
+The blindness is complementary, which is the point: **kNN-R² and CCA cannot see
+entanglement; the matched-oracle gap cannot see information loss; MCC-Spearman
+and DCI cannot see monotone reparametrisation.** No single estimand covers the
+space, so "we measured recovery" is not a well-formed claim without naming the
+estimand and its invariance class.
+
+The three corruption classes are **illustrative, not a partition** of recovery
+failure. Each row is an existence proof — *for this corruption, an estimand
+sitting at its identity value could not have detected it* — not a coverage map.
+Two of the three are genuinely orthogonal axes of the map from true latent to
+embedding: whether it is **injective** (information) and whether it lies in the
+**equivalence group** modulo which recovery is claimed (alignment). The third,
+monotone reparametrisation, is not a separate mode but the *boundary* of that
+group.
+
+Invariance classes, stated:
+
+| estimand | provably cannot see |
+|---|---|
+| kNN-R² / kNN transfer | any map preserving the k-NN **sets**. Distance-rank preservation is *sufficient but not necessary*; the class contains the similarity group Sim(d) = translations ⋊ (O(d) × ℝ₊) |
+| CCA | any affine map with **injective** linear part (⊋ GL(d): also injective lifts to higher dimension, appended noise coordinates, duplicated coordinates, translations). Blind to *linear* entanglement only — information-preserving *nonlinear* axis mixing is visible |
+| MCC-Pearson | permutation + per-axis affine |
+| MCC-Spearman | permutation + per-axis *monotone* reparametrisation |
+| matched-oracle gap | = CCA − MCC identically; blind to information loss because it cancels in the difference |
+
+This generalises past this probe: kNN-R² and kNN-transfer recovery scores are
+common in the integration and disentanglement literature, and any
+critical-threshold claim built on one is exposed to reading a geometry constant
+as a phenomenon.
 
 ## The geometry constant, in detail
 
@@ -225,76 +302,122 @@ alignment penalty makes recovery overlap-dependent
 [`analyze_alignment.py`](analyze_alignment.py); 25 seeds/cell). CCA (subspace
 recovery), the primary metric:
 
+*Pre-registration.* The analysis reported here — raw CCA as the primary metric
+and MCC secondary, TOST for the faithful arm, a slope test for the alignment
+arms, and collapse-probability vs ρ — was fixed in
+[`DESIGN_v3.md`](DESIGN_v3.md) after a 4-seed pilot and **before** the 25-seed
+confirmatory run; the pilot's role was to motivate the design, not to select the
+test.
+
+The full curve (CCA, 25 seeds/cell) — reported in full because the endpoint
+contrast alone would hide the shape:
+
 | ρ | faithful (λ=0) | mix (λ=200) | mix (λ=1000) | adversarial (DANN) |
 |---|---|---|---|---|
-| 1.00 | 0.99 | 0.99 | 0.99 | 0.99 |
-| 0.60 | 0.99 | 0.91 | 0.74 | 0.91 |
-| 0.20 | 0.99 | 0.85 | 0.75 | 0.94 |
-| 0.05 | 0.99 | 0.79 | 0.70 | 0.89 |
+| 1.00 | 0.993 | 0.993 | 0.993 | 0.991 |
+| 0.80 | 0.993 | 0.989 | 0.868 | 0.981 |
+| 0.60 | 0.993 | 0.910 | 0.739 | 0.913 |
+| 0.40 | 0.992 | 0.887 | 0.728 | 0.927 |
+| 0.20 | 0.992 | 0.848 | 0.754 | 0.938 |
+| 0.05 | 0.992 | 0.795 | 0.702 | 0.890 |
 
 - **Faithful:** CCA drop (ρ=1→0.05) = +0.000 [−0.000, +0.001] — **TOST-equivalent
   to flat** (SESOI 0.05): recovery is overlap-invariant, confirming the null on
-  the recovery axis too.
-- **Alignment collapses recovery as ρ falls**, across *two* mechanisms and
-  dose-dependently: CCA drop +0.199 (d=1.67, slope p=3.6×10⁻¹¹) at moment-matching
-  λ=200; +0.291 (d=2.37, p=1.9×10⁻¹⁰) at λ=1000; and +0.101 (d=1.08, p=2.7×10⁻⁶)
-  for an adversarial (DANN) objective — so the effect is a property of *aligning*,
-  not of one penalty.
-- The effect is **stochastic**: the collapse probability P(CCA<0.85) rises from 0
-  at ρ=1 to 0.52 / 0.76 / 0.28 at ρ=0.05 (mix-200 / mix-1000 / adv), i.e. a
-  rising *fraction* of runs fold the axis as overlap shrinks. The faithful arm
-  never collapses (P=0 at every ρ).
+  the recovery axis too. Collapse probability P(CCA<0.85) = 0 at every ρ.
+- **Alignment collapses recovery once overlap is reduced**: CCA drop +0.199
+  (d=1.67, slope p=3.6×10⁻¹¹) at moment-matching λ=200 and +0.291 (d=2.37,
+  p=1.9×10⁻¹⁰) at λ=1000. The effect is **stochastic** — collapse probability
+  rises from 0 at ρ=1 to 0.52 (λ=200) and 0.76 (λ=1000) at ρ=0.05, i.e. a rising
+  *fraction* of runs fold the axis rather than a uniform degradation.
+
+**The shape, reported honestly** ([`analyze_alignment_shape.py`](analyze_alignment_shape.py)).
+The v2 rule — no threshold language unless a segmented fit beats linear on BIC —
+applies to our own positive result too, and the interior is not uniformly
+monotone:
+
+| arm | Spearman(CCA,ρ) | monotone? | BIC | drop (ρ≥0.6 vs ρ≤0.4) |
+|---|---|---|---|---|
+| faithful | +0.23 | inversions ≤0.001 (noise) | linear | +0.001 |
+| mix_200 | +0.73 | **monotone** | linear | +0.121 |
+| mix_1000 | +0.57 | ρ=0.20 above ρ=0.40 by 0.026 | *segmented* (bp 0.6) | +0.138 |
+| adv_100 | +0.53 | ρ=0.20 above ρ=0.60 by 0.025 | linear | +0.043 |
+
+Only `mix_200` is strictly monotone; `mix_1000` and `adv_100` each contain one
+inversion at low ρ. Only one arm of four licenses segmented-over-linear, and it
+is also an arm with an inversion, so **we do not claim a threshold**. The
+defensible statement is: *recovery degrades substantially once overlap is
+reduced and then saturates at low overlap* — a large but saturating effect, not a
+clean monotone dose-response in ρ, and not a cliff. **The dose-response that is
+clean is in the alignment strength λ, not in ρ.**
+
+**Two mechanisms, but not equally.** The adversarial (DANN) arm also degrades
+(drop +0.101, d=1.08, p=2.7×10⁻⁶), which supports the effect being a property of
+*aligning* rather than of one penalty — but it is roughly **a third the size** of
+the moment-matching effect (+0.043 vs +0.121/+0.138 on the half-range contrast)
+and carries the clearest non-monotonicity. The honest claim is that the effect
+replicates in direction and significance across two alignment mechanisms, with
+magnitude strongly mechanism-dependent; a single-mechanism claim would be
+overreach in the other direction.
 
 So "support overlap governs recovery" is real, but it is a property of the
 **objective**, not of the data or the representation: irrelevant to a faithful
 encoder, decisive for an aligner. This is the field's over-correction intuition,
-placed on a controlled ρ knob — and it *reinforces* the metric story rather than
-competing with it.
+placed on a controlled ρ knob. *(The domain-gauge probe that motivated this is in
+[`DESIGN_v3.md`](DESIGN_v3.md); it gave only a weak effect — a faithful encoder
+absorbs a domain-specific gauge — which is why the clean result is
+objective-induced and needs no gauge.)*
 
-**A methodological point that falls out.** This failure is **information loss**
-(the alignment folds the shifted axis, mapping A's exclusive region onto B's), not
-axis-rotation. So the **matched-oracle gap — the v2 estimand, built to isolate
-entanglement — is blind to it**: it stays flat (0.06–0.14) for *every* arm,
-including the collapsing ones, while CCA falls to 0.70, because it subtracts
-information loss by construction. The two regimes need different estimands: raw
-CCA/MCC for alignment-induced folding, the matched-oracle gap for entanglement;
-reporting the wrong one hides the effect. *(The domain-gauge probe that motivated
-this is documented in [`DESIGN_v3.md`](DESIGN_v3.md); it gave only a weak effect —
-a faithful encoder absorbs a domain-specific gauge — which is why the clean result
-is objective-induced and needs no gauge.)*
+## The certificate (synthetic-only — scope stated)
 
-## The certificate
-
-The diagnostic that separates removable δ from support mismatch ρ *before*
+A diagnostic that separates removable δ from support mismatch ρ *before*
 integration. An **unsupervised** version is **provably limited** — Ben-David &
 Luu (2010) prove unlabeled data cannot in general distinguish an adaptable from a
 non-adaptable covariate shift — and the whole unsupervised family is shown
 failing. The **anchor-based** version (a few known-shared cells fix the removable
 affine map; the *irreducible per-gene mean-gap* is tested against a
-permutation-null floor) resolves it, correctly calling all validation cases
-including the harmless ρ=1/δ=2 case v1 wrongly flagged. This is the semi-
-supervised-integration setting (STACAS anchors), not the unsupervised-batch-
-metric one.
+permutation-null floor) resolves it on synthetic data, correctly calling all
+validation cases including the harmless ρ=1/δ=2 case v1 wrongly flagged. This is
+the semi-supervised-integration setting (STACAS anchors), not the
+unsupervised-batch-metric one.
+
+> **Scope.** This result is **synthetic-only**. It is reported as a section, not
+> a headline claim, and no transfer to real data is asserted. Real-data
+> validation is specified but not run: controlled cell-line mixtures with
+> construction-level ground truth (CellBench/sc_mixology GSE118767; Zheng
+> Jurkat:293T) to instantiate the ρ and δ sweeps, with anchors taken **only** from
+> channels orthogonal to the RNA being tested (genotype demultiplexing, sort
+> gates, spike-ins) to avoid circularity, and a permutation null resampled at the
+> **pseudobulk/replicate** level rather than the cell level (a cell-level null
+> would make everything significant — cells within a sample are not exchangeable,
+> Squair et al. 2021). The two gates that decide it are a negative control (two
+> random splits of one library must not fire) and the harmless high-δ/high-ρ case
+> (same populations across very different chemistries must not fire while an
+> adversarial source-detector reaches ≈1.0). Until those run, the certificate's
+> real-data operating envelope is unknown.
 
 ## The corrected scientific claim
 
-> **The general, correctness-solid result:** a rotation-invariant recovery
-> metric is provably blind to the rotational non-identifiability of an
-> isotropic-prior latent model, and a "critical overlap threshold" derived from
-> one can be the zero-crossing of the metric's own extrapolation geometry
-> (1 − 4^(−1/3) for uniform marginals) — a constant computable from the marginal
-> shape, embedding scale, and k, present even for a perfectly identified oracle
-> embedding. **The worked example:** with the metric fixed (rotation-sensitive,
-> matched-oracle) and ρ, δ decoupled, the shared latent is recovered within a
-> ρ-independent gap of the ceiling at all overlaps (a pre-registered,
-> equivalence-tested null); what overlap bounds is only domain *removal*, and even
-> that is a recovery-preserving frontier, not a hard bound. **The resolution of
-> "does overlap ever govern recovery":** yes — but it is a property of the
-> *objective*. A faithful encoder is overlap-invariant (equivalence-tested);
-> alignment objectives (moment-matching and adversarial) collapse recovery as
-> overlap falls (CCA 0.99→0.70, d up to 2.4, all p<10⁻⁵), via *information loss*
-> that the matched-oracle gap is blind to. Whether support overlap matters for
-> recovery is set by the objective, not the data or the representation.
+> **The thesis:** every recovery estimand has an invariance class, and a result
+> is an artifact whenever the failure mode under test lives inside it. Shown
+> twice: a standard kNN recovery score is *exactly* invariant to rotation — the
+> non-identifiability it is used to test for — and manufactures a critical
+> overlap threshold equal to the zero-crossing of its own extrapolation geometry
+> (1 − 4^(−1/3) at fixed uniform marginal, dimension, per-axis scale and k),
+> reproduced on a perfectly identified oracle embedding; and our own
+> matched-information oracle gap, built to fix that, is invariant to *information
+> loss* by construction and would have reported "no effect" on a real
+> alignment-induced collapse.
+>
+> **What that buys, once the estimands are matched to the failure modes:** for a
+> faithful per-cell encoder, latent recovery is **overlap-invariant** — a
+> pre-registered, equivalence-tested null across three model families (TOST, 25
+> seeds). For the alignment objectives practitioners actually run, recovery
+> **collapses once overlap is reduced** (CCA 0.99 → 0.70, d up to 2.4, replicated
+> in direction across two alignment mechanisms with strongly mechanism-dependent
+> magnitude, saturating rather than monotone in ρ). Whether support overlap
+> matters for recovery is set by the **objective**, not by the data or the
+> representation — and which of these two facts you observe is set by the
+> estimand you chose.
 
 ## Honest limitations
 
@@ -304,10 +427,24 @@ metric one.
   paired alignment result shows the *other* side (overlap collapses recovery once
   the objective aligns), so together they bound the phenomenon rather than leaving
   it open. The metric result remains the domain-general contribution.
+- **The alignment collapse is not monotone in ρ.** Only one of four arms is
+  strictly monotone and only one licenses a segmented fit; the honest description
+  is *large but saturating*, and we do not claim a threshold. The clean
+  dose-response is in alignment strength λ, not in ρ.
+- **The two alignment mechanisms are not equal.** DANN reproduces the direction
+  and significance but at roughly a third the magnitude, and carries the clearest
+  non-monotonicity.
 - **removal ≈ ρ is algebra**, not a measured law (balacc = 1 − ρ/2), and removal
   is not hard-bounded by ρ; only the recovery-preserving optimum is.
-- **The geometry constant is not universal**: marginal-, scale-, and k-dependent,
-  and it exists as a stable constant only for compact-support marginals.
+- **The geometry constant is not universal**: it is a constant only at a *fixed*
+  marginal shape, embedding dimension, per-axis scale and k, and only for
+  compact-support marginals (a Gaussian marginal has no stable threshold at all —
+  its crossing drifts toward 0 as n grows).
+- **The taxonomy is illustrative, not exhaustive.** Three failure modes
+  (entanglement, information loss, monotone reparametrisation) with six
+  estimands; other failure modes (support mismatch itself, seed-dependent
+  bimodality, axis-subset recovery) are not covered by the table.
+- **The certificate is synthetic-only** (see its scope box).
 - **A ρ×δ interaction is intrinsic to compositional data** (≤7% variance at
   δ=1), so the primary estimand is run at δ=0, and the decoupling is certified
   only for δ ≤ 2.0 — both published rather than hidden.
@@ -315,7 +452,8 @@ metric one.
 ## Reproduce
 
 ```bash
-python verify_geometry_constant.py                     # headline receipt (oracle -> 1-4^(-1/3))
+python estimand_taxonomy.py                            # THE THESIS: invariance-class table
+python verify_geometry_constant.py                     # demo 1 receipt (oracle -> 1-4^(-1/3))
 python verify_closed_form.py                            # the recipe: marginal / scale / k / rotation
 python verify_dgp2.py && python verify_stage2.py && python verify_stage3.py
 python run_stage4.py   && python analyze_stage4.py     # main result (5-seed pilot)
@@ -323,5 +461,6 @@ python power_analysis.py                                # MDE: n=5 d~2.0, n=25 d
 python run_frontier.py && python run_mixing_bound.py   # recovery-preserving frontier, both directions
 python equivalence_test.py results_stage4_n25.csv 0.8  # TOST vs pre-registered SESOI (needs merged n=25)
 python run_alignment_campaign.py && python analyze_alignment.py  # objective-induced overlap-dependence
+python analyze_alignment_shape.py                      # curve shape: monotonicity + segmented-vs-linear BIC
 python certificate.py                                  # certificate validation
 ```
