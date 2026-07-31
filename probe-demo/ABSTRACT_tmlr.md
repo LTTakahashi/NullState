@@ -64,8 +64,17 @@ shifted direction at 45° to the ground-truth basis does *not* make the gap fire
 the alignment arm (excess over control ≤ 0 at every overlap) — but exposes a larger
 limitation: on a *perfectly recovering* model at full overlap, single-run gaps span
 [0.009, 0.290] across seeds, reaching the value a genuine 45° rotation produces.
-The estimand is interpretable only in aggregate, with a null baseline near 0.1
-rather than 0; the band we report elsewhere is that floor, not a signal.
+That floor is not estimator noise: with the subspace already recovered, CCA − MCC
+reads out the angle between the frame a run converged to and the chosen basis
+(gap = 1 − cos φ), so it **measures how much axis-level identifiability a model
+class attains**. Used as an instrument it finds the iVAE variability condition
+lowering the floor in the predicted direction but not significantly (0.079 vs
+0.097, d = 0.23) — under-tested, since the environment in that design varies only
+one of the two coordinates. Crucially the floor is **not subtractable**: its height
+depends on the angle between the data's shift direction and the latent basis
+(0.087 → 0.151 when we rotate it), which on real data is precisely unobservable.
+Our own equivalence result is therefore best stated in gap units: no ρ-dependent
+effect larger than 0.070, about a quarter of the full rotation signature.
 
 **What the estimands, once matched to the failure modes, actually show.** In a
 data-generating process where biological support overlap (ρ) and removable batch

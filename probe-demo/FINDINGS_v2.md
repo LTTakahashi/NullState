@@ -102,7 +102,10 @@ same angle as a basis-mismatch control.
 
 *Result 1 — the attack is closed.* The gap does **not** fire for the alignment arm.
 Its excess over the faithful control is ≤ 0 at every ρ (−0.06 to −0.12); the
-predicted ~0.14 does not appear.
+predicted ~0.14 does not appear. The mechanism is cleaner stated in the *model's*
+frame than in the DGP's: the folding leaves axis-factorised structure in whatever
+basis the model converged to, which is why rotating the **ground-truth** basis does
+not surface it.
 
 *Result 2 — a larger limitation surfaced, and it is ours.* On the **faithful arm at
 ρ = 1**, where the true gap is unambiguously zero, single runs read:
@@ -113,15 +116,80 @@ predicted ~0.14 does not appear.
 | θ = 45° (shift off axis) | 0.151 | [0.009, 0.290] | 50% |
 
 A genuine 45° rotation scores 0.293. A **perfectly recovering** model reaches
-**0.290** on some seeds. So a single-run gap is not distinguishable from the
-entanglement signature: the estimand is interpretable only in aggregate, and even
-then its null baseline is ≈0.09–0.15, not 0. Scoring each run against whichever
-candidate basis it actually converged to collapses the θ=45° gap from 0.112 to
-0.024 — confirming most of it is basis mismatch, not entanglement.
+**0.290** on some seeds. Scoring each run against whichever candidate basis it
+actually converged to collapses the θ=45° gap from 0.112 to 0.024 — most of it is
+basis mismatch, not entanglement.
 
-This re-reads our own Stage-4 numbers: the 0.05–0.14 band reported there is the
-estimand's **noise floor**, not a signal. The null (no trend in ρ) is unaffected;
-the baseline is simply not zero, and we now say so.
+### That floor is not noise — it is the theory, measured
+
+Calling this a noise floor would be wrong, and would make it sound like a defect
+in the estimand. It is Locatello's result asserting itself. An isotropic prior
+leaves the objective indifferent to rotation, so nothing prefers the ground-truth
+basis; each run converges to *some* frame, and MCC then registers the angle
+between that frame and ours. With CCA ≈ 1 the subspace is already right, so for a
+2-D latent MCC = cos φ (Hungarian matching swaps past 45°, bounding MCC ≥ 0.707),
+giving an exact readout:
+
+> **gap = 1 − cos φ  ⟺  φ = arccos(1 − gap)**, mapping gap ∈ [0, 0.293] onto
+> frame angle φ ∈ [0°, 45°].
+
+The observed range [0.000, 0.290] is therefore the **distribution over converged
+frames** — some runs land near the true axes, some near the worst case, and 0.293
+is the worst case precisely because cos 45° = 0.707. So the quantity is not
+unreliable; it measures **how much strong (axis-level) identifiability a model
+class actually achieves**. That turns the floor into an instrument.
+
+### Pointing the instrument: does the iVAE variability condition bite?
+
+([`analyze_identifiability_floor.py`](analyze_identifiability_floor.py), on the
+Stage-4 runs.) The three arms make different predictions: `conditional` has an
+isotropic prior and nothing to break rotation; `ivae_2env` cannot satisfy
+Khemakhem et al. (2020) Thm 1 assumption (iv); `ivae_5env` meets it at 5 = 2n+1,
+and that theorem's conclusion is identifiability up to *permutation*.
+
+| arm | floor (gap) | implied φ | % of the 45° signature |
+|---|---|---|---|
+| conditional | 0.097 | 25.5° | 33% |
+| ivae_2env | 0.093 | 24.8° | 32% |
+| ivae_5env | **0.079** | 22.9° | 27% |
+
+`ivae_5env` is lower in the predicted direction against both comparators, but
+**not significantly** (d = +0.23, p = 0.43 vs conditional; d = +0.16, p = 0.58 vs
+ivae_2env). Before reading that as a negative result about the theorem, note a
+structural caveat we checked: **the environment varies only the unshifted axis**
+— across-environment spread of the coordinate mean is 1.63 on axis 1 but 0.066 on
+axis 0. The condition is satisfiable on paper while having purchase on half the
+latent, so this contrast under-tests it. A decisive version (environment varying
+*every* axis, no support shift, n_env swept across the 2n+1 boundary) is in
+[`run_variability_condition.py`](run_variability_condition.py).
+
+### The floor is not a subtractable constant — which is the version that matters
+
+It moved from **0.087 to 0.151** when we rotated the shift direction, so it is a
+function of the angle between the DGP's shift and the latent basis. In synthetic
+work you set that angle and can build a matched control. In real data it is
+*exactly the unobservable quantity*. **You cannot subtract a floor whose value
+depends on something you cannot measure** — which is stronger than
+basis-dependence alone, and is the form that generalises to practitioners.
+
+### What this does to our own null
+
+The Stage-4 gaps sit at the floor, so the equivalence test compares floor heights;
+it is only valid if the floor does not itself drift with ρ. It does not, and that
+is now an explicit panel rather than an incidental observation — per-arm spread
+across the ρ sweep is 0.057 / 0.025 / 0.062 (19% / 9% / 21% of the 45° signature),
+with no monotone trend. And stating the bound in gap units rather than only in *d*:
+
+| quantity | gap units |
+|---|---|
+| pooled per-cell SD | 0.087 |
+| pre-registered SESOI (d = 0.8) | **0.070** |
+| identifiability floor | 0.079–0.097 |
+| full rotation signature (45°) | 0.293 |
+
+So the honest reading of the null is: **no ρ-dependent effect larger than ~24% of
+the full rotation signature.** That is a real bound, and a smaller one than
+"d = 0.8" sounds when quoted without the scale it is measured against.
 
 The second demonstration is the more persuasive one, because the blind spot
 survived a correctness argument, a gate, and our own scrutiny. The lesson is
@@ -530,9 +598,12 @@ unsupervised-batch-metric one.
   (entanglement, information loss, monotone reparametrisation) with six
   estimands; other failure modes (support mismatch itself, seed-dependent
   bimodality, axis-subset recovery) are not covered by the table.
-- **The entanglement gap has a non-zero null baseline (~0.09-0.15) and is not
-  interpretable per-run.** Its blind region is defined relative to a chosen
-  ground-truth basis; on real data that choice has no observable counterpart.
+- **The entanglement gap sits on an identifiability floor (~0.08–0.15), not a
+  zero baseline, and is not interpretable per-run.** The floor is the rotational
+  non-identifiability of an isotropic-prior model measured directly (φ ≈ 23–26°),
+  not estimator noise — but it is **not subtractable**, because its height depends
+  on the angle between the data's shift direction and the latent basis, which on
+  real data is unobservable.
 - **The certificate is synthetic-only** (see its scope box).
 - **A ρ×δ interaction is intrinsic to compositional data** (≤7% variance at
   δ=1), so the primary estimand is run at δ=0, and the decoupling is certified
@@ -552,5 +623,7 @@ python equivalence_test.py results_stage4_n25.csv 0.8  # TOST vs pre-registered 
 python run_alignment_campaign.py && python analyze_alignment.py  # objective-induced overlap-dependence
 python analyze_alignment_shape.py                      # curve shape: monotonicity + segmented-vs-linear BIC
 python run_basis_rotation.py && python analyze_basis_rotation.py  # basis-dependence of the gap
+python analyze_identifiability_floor.py                # the floor as an instrument (per-arm, SESOI in gap units)
+python run_variability_condition.py                    # does the iVAE condition lower the floor?
 python certificate.py                                  # certificate validation
 ```
