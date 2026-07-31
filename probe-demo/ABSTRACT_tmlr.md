@@ -67,10 +67,16 @@ limitation: on a *perfectly recovering* model at full overlap, single-run gaps s
 That floor is not estimator noise: with the subspace already recovered, CCA − MCC
 reads out the angle between the frame a run converged to and the chosen basis
 (gap = 1 − cos φ), so it **measures how much axis-level identifiability a model
-class attains**. Used as an instrument it finds the iVAE variability condition
-lowering the floor in the predicted direction but not significantly (0.079 vs
-0.097, d = 0.23) — under-tested, since the environment in that design varies only
-one of the two coordinates. Crucially the floor is **not subtractable**: its height
+class attains**. Used as an instrument, it finds that the iVAE variability condition of Khemakhem
+et al. (2020) does **not** bite as a threshold: in a design where the condition is
+exactly satisfiable — environment-dependent location and scale on every axis, no
+support shift, the number of environments swept across the nk+1 boundary — the
+floor declines only gently and monotonically (implied frame angle 24.3° → 18.1°)
+with no discontinuity at the boundary (d = 0.14, p = 0.62; bounded at ≤27% of the
+full rotation signature at 80% power). The theorem concerns the population limit
+and does not promise that a finite-sample optimiser finds the identified solution,
+so this is a measurement rather than a refutation — but it is the kind of direct
+evidence this very widely invoked condition mostly lacks. Crucially the floor is **not subtractable**: its height
 depends on the angle between the data's shift direction and the latent basis
 (0.087 → 0.151 when we rotate it), which on real data is precisely unobservable.
 Our own equivalence result is therefore best stated in gap units: no ρ-dependent

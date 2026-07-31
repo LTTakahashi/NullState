@@ -155,13 +155,39 @@ and that theorem's conclusion is identifiability up to *permutation*.
 
 `ivae_5env` is lower in the predicted direction against both comparators, but
 **not significantly** (d = +0.23, p = 0.43 vs conditional; d = +0.16, p = 0.58 vs
-ivae_2env). Before reading that as a negative result about the theorem, note a
-structural caveat we checked: **the environment varies only the unshifted axis**
-— across-environment spread of the coordinate mean is 1.63 on axis 1 but 0.066 on
-axis 0. The condition is satisfiable on paper while having purchase on half the
-latent, so this contrast under-tests it. A decisive version (environment varying
-*every* axis, no support shift, n_env swept across the 2n+1 boundary) is in
-[`run_variability_condition.py`](run_variability_condition.py).
+ivae_2env). That contrast also under-tests the condition, for a structural reason
+we checked: **the environment varies only the unshifted axis** — across-environment
+spread of the coordinate mean is 1.63 on axis 1 but 0.066 on axis 0 — so a
+condition satisfiable on paper has purchase on half the latent.
+
+**The decisive version** removes both problems
+([`run_variability_condition.py`](run_variability_condition.py)): environment-
+dependent location *and* scale on **every** axis, no support shift at all, and
+n_env swept across the theoretical boundary (nk+1 = 2n+1 = 5 for n=2, k=2).
+12 seeds per level:
+
+| n_env | satisfies (iv)? | floor (gap) | implied φ |
+|---|---|---|---|
+| 2 | no | 0.110 | 24.3° |
+| 3 | no | 0.096 | 23.2° |
+| 5 | **yes** | 0.089 | 20.4° |
+| 9 | **yes** | 0.090 | 18.1° |
+
+**The condition does not bite as a threshold.** Violating vs satisfying is
+0.103 vs 0.089 — d = +0.14, p = 0.62; Spearman(n_env, gap) = −0.20, p = 0.17.
+The design bounds any effect at 0.078 gap units at 80% power, i.e. **≤27% of the
+full rotation signature**. What *is* visible is a gentle monotone decline in the
+implied frame angle (24.3° → 23.2° → 20.4° → 18.1°) with **no discontinuity at
+n_env = 5**, so the pattern reads as "more environments help gradually", not as
+the discrete satisfy/violate structure the theorem is stated in.
+
+We state this carefully. The theorem concerns identifiability of the model class
+in the population limit; it does not promise that a finite-sample gradient-descent
+run *finds* the identified solution. So this is not a refutation. It is a measured
+statement that, in a regime where the condition is exactly satisfiable and
+directly instrumented, crossing the boundary produces no detectable jump in
+achieved axis-level identifiability — which is the kind of evidence the literature
+around this very widely invoked condition mostly lacks.
 
 ### The floor is not a subtractable constant — which is the version that matters
 
