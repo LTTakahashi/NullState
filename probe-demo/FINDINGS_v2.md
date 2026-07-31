@@ -32,6 +32,14 @@ blindness above — is that a clean, published-looking "critical support overlap
 metric's own extrapolation geometry, reproduced on a *perfectly identified oracle
 embedding*. One metric, two independent ways to mislead.
 
+Keeping these separate matters, because the natural inference from the first — *use
+a rotation-sensitive metric and you are safe* — is wrong. The threshold appears on
+an oracle embedding, which has **no entanglement to be sensitive to**. The
+mechanism is a predictor that cannot extrapolate, scored by an R² normalised
+against the target's variance; any estimand with that construction inherits the
+same curve and the same constant, however rotation-sensitive it is. Fixing the
+blindness and fixing the artifact are two different repairs.
+
 **Demonstration 2 — our own metric, with a blind spot we had to be shown.** To
 fix Demonstration 1 we built a rotation-sensitive matched-information oracle gap:
 noise the true latent until it carries the same information (CCA) as the learned
@@ -64,8 +72,56 @@ true coordinate.
 > general property of the estimand.
 
 What the gap does measure is the excess of linear-subspace recovery over axis-wise
-recovery — "right subspace, wrong axes." The bisection machinery we built was
-unnecessary.
+recovery — "right subspace, wrong axes." **We therefore report CCA − MCC directly**
+([`metrics2.entanglement_gap`](metrics2.py)) and demote the matched-noise oracle to
+a validation that the matching behaves as claimed. That removes a construction a
+reader would otherwise have to audit and makes the zero set self-evident rather
+than empirical.
+
+### The blind spot is basis-dependent — and that is the deepest form of the thesis
+
+{MCC = CCA} is the axis-factorised set **relative to the ground-truth basis one
+chose**. CCA is basis-free; MCC is not, because Hungarian matching asks whether
+recovered coordinate *i* tracks true coordinate *j*. The gap therefore inherits
+basis-dependence entirely through MCC, and rotating the ground-truth basis moves
+the blind region to a different set of corruptions. In synthetic work that basis
+is a modelling choice. On real data there is no privileged basis for "the true
+biological latent", so **the estimand's blind region is positioned by a choice
+with no observable counterpart** — the same error class as v1, one level up.
+
+So: an invariance class is not a property of the metric alone. It is a property of
+**the metric plus a coordinate choice**, and one of those is often arbitrary.
+
+**We tested the obvious attack this implies** ([`run_basis_rotation.py`](run_basis_rotation.py)
+→ [`analyze_basis_rotation.py`](analyze_basis_rotation.py); 128 runs, 8 seeds). In
+our DGP the shifted direction *is* a coordinate axis, so an alignment objective
+folding it is axis-factorised **by construction** — which would make Demonstration
+2 an artifact. We put the shifted direction at 45° to the ground-truth basis
+([`dgp2_rotbasis.py`](dgp2_rotbasis.py)) and reran, with the faithful arm at the
+same angle as a basis-mismatch control.
+
+*Result 1 — the attack is closed.* The gap does **not** fire for the alignment arm.
+Its excess over the faithful control is ≤ 0 at every ρ (−0.06 to −0.12); the
+predicted ~0.14 does not appear.
+
+*Result 2 — a larger limitation surfaced, and it is ours.* On the **faithful arm at
+ρ = 1**, where the true gap is unambiguously zero, single runs read:
+
+| basis angle | mean | range | runs > 0.15 |
+|---|---|---|---|
+| θ = 0 (shift on an axis) | 0.087 | [0.000, 0.191] | 38% |
+| θ = 45° (shift off axis) | 0.151 | [0.009, 0.290] | 50% |
+
+A genuine 45° rotation scores 0.293. A **perfectly recovering** model reaches
+**0.290** on some seeds. So a single-run gap is not distinguishable from the
+entanglement signature: the estimand is interpretable only in aggregate, and even
+then its null baseline is ≈0.09–0.15, not 0. Scoring each run against whichever
+candidate basis it actually converged to collapses the θ=45° gap from 0.112 to
+0.024 — confirming most of it is basis mismatch, not entanglement.
+
+This re-reads our own Stage-4 numbers: the 0.05–0.14 band reported there is the
+estimand's **noise floor**, not a signal. The null (no trend in ρ) is unaffected;
+the baseline is simply not zero, and we now say so.
 
 The second demonstration is the more persuasive one, because the blind spot
 survived a correctness argument, a gate, and our own scrutiny. The lesson is
@@ -474,6 +530,9 @@ unsupervised-batch-metric one.
   (entanglement, information loss, monotone reparametrisation) with six
   estimands; other failure modes (support mismatch itself, seed-dependent
   bimodality, axis-subset recovery) are not covered by the table.
+- **The entanglement gap has a non-zero null baseline (~0.09-0.15) and is not
+  interpretable per-run.** Its blind region is defined relative to a chosen
+  ground-truth basis; on real data that choice has no observable counterpart.
 - **The certificate is synthetic-only** (see its scope box).
 - **A ρ×δ interaction is intrinsic to compositional data** (≤7% variance at
   δ=1), so the primary estimand is run at δ=0, and the decoupling is certified
@@ -492,5 +551,6 @@ python run_frontier.py && python run_mixing_bound.py   # recovery-preserving fro
 python equivalence_test.py results_stage4_n25.csv 0.8  # TOST vs pre-registered SESOI (needs merged n=25)
 python run_alignment_campaign.py && python analyze_alignment.py  # objective-induced overlap-dependence
 python analyze_alignment_shape.py                      # curve shape: monotonicity + segmented-vs-linear BIC
+python run_basis_rotation.py && python analyze_basis_rotation.py  # basis-dependence of the gap
 python certificate.py                                  # certificate validation
 ```

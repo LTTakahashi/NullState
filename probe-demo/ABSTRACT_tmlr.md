@@ -49,9 +49,23 @@ Its exact zero set is therefore the **axis-factorised** maps — each recovered
 coordinate a function of one true coordinate. (We first mis-stated this as
 "blind to information loss"; that is false, and we report the counterexamples:
 non-axis-factorised information loss such as common-mode noise scores as high as
-the 45° rotation we present as the entanglement signature.) The alignment failure
-happened to be approximately axis-factorised, so an entire real effect was
-invisible to it.
+the 45° rotation we present as the entanglement signature.) We therefore report
+CCA − MCC directly and demote the oracle construction to a validation.
+
+**The blind spot is basis-dependent.** {MCC = CCA} is the axis-factorised set
+*relative to the ground-truth basis one chose*: CCA is basis-free, Hungarian
+matching is not, so the gap inherits basis-dependence entirely through MCC, and
+rotating the ground-truth basis moves its blind region. On real data no privileged
+basis for "the true latent" exists, so the blind region is positioned by a choice
+with no observable counterpart. An invariance class is thus a property of the
+metric **plus a coordinate choice** — and one of those is often arbitrary. Testing
+this (128 runs) closes the obvious attack on our own demonstration — placing the
+shifted direction at 45° to the ground-truth basis does *not* make the gap fire for
+the alignment arm (excess over control ≤ 0 at every overlap) — but exposes a larger
+limitation: on a *perfectly recovering* model at full overlap, single-run gaps span
+[0.009, 0.290] across seeds, reaching the value a genuine 45° rotation produces.
+The estimand is interpretable only in aggregate, with a null baseline near 0.1
+rather than 0; the band we report elsewhere is that floor, not a signal.
 
 **What the estimands, once matched to the failure modes, actually show.** In a
 data-generating process where biological support overlap (ρ) and removable batch

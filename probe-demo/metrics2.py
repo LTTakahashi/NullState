@@ -271,3 +271,33 @@ if __name__ == "__main__":
         s = score_embedding(t, z, with_dci=False)
         print(f"{name:>15}: MCC(p) {s['mcc_pearson']:.3f}  "
               f"MCC(s) {s['mcc_spearman']:.3f}  CCA {s['cca_mean']:.3f}")
+
+
+def entanglement_gap(t_true, z, seed: int = 0) -> float:
+    """THE estimand for axis mixing: CCA - MCC.
+
+    Interpretation is immediate: CCA is recovery up to an invertible linear map
+    (was the right SUBSPACE found?), MCC is recovery up to permutation and
+    per-axis affine (were the right AXES found?). Their difference is exactly
+    "subspace recovered, axes scrambled".
+
+    This replaces the matched-noise-oracle construction, which was shown to be
+    identically equal to this quantity (see estimand_taxonomy.verify_gap_identity):
+    the oracle family is isotropic noise on the true latent, hence axis-factorised,
+    hence MCC(oracle) = CCA(oracle); matching information forces
+    MCC(oracle) = CCA(z) and the oracle cancels out. Reporting CCA - MCC directly
+    removes a construction a reader would otherwise have to audit, and makes the
+    zero set self-evident: {MCC = CCA}, the AXIS-FACTORISED maps.
+
+    BASIS-DEPENDENCE (state this whenever the estimand is used). CCA is basis-free;
+    MCC is not, because Hungarian matching asks whether recovered coordinate i
+    tracks true coordinate j. The gap therefore inherits basis-dependence entirely
+    through MCC, and its blind set -- the axis-factorised maps -- is defined
+    RELATIVE TO THE GROUND-TRUTH BASIS one chose. Rotate that basis and the blind
+    region moves. In synthetic work the basis is a modelling choice; on real data
+    there is no privileged basis for "the true latent", so the estimand's blind
+    region is positioned by a choice with no observable counterpart.
+    """
+    c = cca_score(t_true, z, seed=seed)["cca_mean"]
+    m = mcc(t_true, z, "pearson", seed=seed)["mcc_pearson"]
+    return float(c - m)

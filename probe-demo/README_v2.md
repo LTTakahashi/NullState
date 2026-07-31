@@ -26,7 +26,11 @@ built ourselves.
    and it missed an entire real alignment-induced recovery collapse
    (CCA 0.99 → 0.70) that raw CCA sees plainly. *(We first mis-stated this as
    "blind to information loss"; it is not — non-axis-factorised information loss
-   scores as high as a 45° rotation. Correction recorded in FINDINGS.)*
+   scores as high as a 45° rotation. Correction recorded in FINDINGS.)* The blind
+   region is moreover defined **relative to a chosen ground-truth basis**, so an
+   invariance class is a property of the metric *plus a coordinate choice* — and
+   on real data that choice has no observable counterpart
+   ([`analyze_basis_rotation.py`](analyze_basis_rotation.py)).
 
 With the estimands matched to the failure modes: recovery is **overlap-invariant
 for a faithful per-cell encoder** (pre-registered, equivalence-tested null) and
