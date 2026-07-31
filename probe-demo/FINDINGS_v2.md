@@ -164,30 +164,72 @@ condition satisfiable on paper has purchase on half the latent.
 ([`run_variability_condition.py`](run_variability_condition.py)): environment-
 dependent location *and* scale on **every** axis, no support shift at all, and
 n_env swept across the theoretical boundary (nk+1 = 2n+1 = 5 for n=2, k=2).
-12 seeds per level:
+12 seeds per level. And it needs a null we had not specified.
 
-| n_env | satisfies (iv)? | floor (gap) | implied φ |
-|---|---|---|---|
-| 2 | no | 0.110 | 24.3° |
-| 3 | no | 0.096 | 23.2° |
-| 5 | **yes** | 0.089 | 20.4° |
-| 9 | **yes** | 0.090 | 18.1° |
+#### The null: is the recovered frame better than a random one?
 
-**The condition does not bite as a threshold.** Violating vs satisfying is
-0.103 vs 0.089 — d = +0.14, p = 0.62; Spearman(n_env, gap) = −0.20, p = 0.17.
-The design bounds any effect at 0.078 gap units at 80% power, i.e. **≤27% of the
-full rotation signature**. What *is* visible is a gentle monotone decline in the
-implied frame angle (24.3° → 23.2° → 20.4° → 18.1°) with **no discontinuity at
-n_env = 5**, so the pattern reads as "more environments help gradually", not as
-the discrete satisfy/violate structure the theorem is stated in.
+If a run recovers the subspace but converges to a frame at angle φ, Hungarian
+matching folds φ into [0°, 45°] — a 90° rotation is a permutation, and 90°−φ is a
+swap. So "the optimiser has no rotational preference" means φ ~ U[0°, 45°], and
+gap = 1 − cos φ has closed form:
 
-We state this carefully. The theorem concerns identifiability of the model class
-in the population limit; it does not promise that a finite-sample gradient-descent
-run *finds* the identified solution. So this is not a refutation. It is a measured
-statement that, in a regime where the condition is exactly satisfiable and
-directly instrumented, crossing the boundary produces no detectable jump in
-achieved axis-level identifiability — which is the kind of evidence the literature
-around this very widely invoked condition mostly lacks.
+> F(x) = (4/π)·arccos(1−x),  **E[gap] = 1 − 2√2/π = 0.0997**, **SD = 0.0880**,
+> range **[0, 0.2929]**.
+
+Every floor we measured sits on those numbers. One-sample KS against the analytic
+law ([`analyze_random_frame_null.py`](analyze_random_frame_null.py)):
+
+| sample | n | mean | SD | KS p |
+|---|---|---|---|---|
+| n_env = 2 (violates) | 12 | 0.110 | 0.085 | 0.59 |
+| n_env = 3 (violates) | 12 | 0.096 | 0.084 | 0.73 |
+| n_env = 5 (satisfies) | 12 | 0.089 | 0.100 | 0.85 |
+| n_env = 9 (satisfies) | 12 | 0.090 | 0.110 | 0.08 |
+| Stage-4 `conditional` | 25 | 0.097 | 0.082 | 0.95 |
+| Stage-4 `ivae_5env` | 25 | 0.079 | 0.079 | 0.51 |
+
+**Nothing rejects.** So the correct statement is much stronger than "the condition
+does not bite as a threshold": **satisfying the variability condition leaves the
+recovered frame statistically indistinguishable from a uniformly random one.** Not
+weak axis-level identifiability — none detectable, in any arm.
+
+#### Two corrections to how we first summarised this
+
+*(i) The mean gap is not monotone.* It runs 0.110 → 0.096 → 0.089 → **0.090**,
+ticking back up at n_env = 9. Our earlier "gentle monotone decline" quoted the
+implied-angle column (24.3° → 23.2° → 20.4° → 18.1°), which is a mean of *per-run*
+angles; since arccos(1−x) is concave, that average sits below arccos of the mean,
+and the Jensen gap *widens* with n_env (2.8° → 6.4°). The shape is shifting — more
+mass near zero plus a heavier tail — not the centre. On a Spearman of −0.20
+(p = 0.17), against a null that predicts the mean and SD outright, the decline is
+fluctuation. More seeds would buy a tighter estimate of nothing.
+
+*(ii) "Satisfies the condition" was nominal, not effective.* Assumption (iv) asks
+that the nk×nk matrix of natural-parameter differences L be invertible — binary on
+paper, continuous in practice. Computing it directly from the generative priors:
+
+| n_env | rank L | σ_min(L) | κ(L) | floor |
+|---|---|---|---|---|
+| 2 | 1 | 0 | ∞ | 0.110 |
+| 3 | 2 | 0 | ∞ | 0.096 |
+| 5 | 4 | **0.027** | **451** | 0.089 |
+| 9 | 4 | 1.654 | 9.3 | 0.090 |
+
+At n_env = 5 — our headline "satisfies" level — **L is invertible but barely**
+(κ ≈ 451). Only n_env = 9 is genuinely well conditioned. That protects the
+negative result from an obvious rebuttal *and* sharpens it: at the one level where
+L is well conditioned, the floor is still 0.090 and still does not reject the
+random-frame law. σ_min(L) is the right x-axis, not the environment count, and it
+explains why counting environments looked gradual.
+
+We state the conclusion carefully. The theorem concerns identifiability of the
+model class in the population limit; it does not promise a finite-sample optimiser
+*finds* the identified solution. So this is a measurement, not a refutation: in a
+regime where the condition is exactly satisfiable and directly instrumented,
+crossing it produces no detectable departure from a random frame. n_env = 9 has
+the lowest KS p (0.08) and the largest SD, so if there is a real effect it lives
+there, and 12 seeds cannot resolve it. The experiment that would is a **σ_min(L)
+sweep at fixed n_env**, not more seeds at fixed n_env.
 
 ### The floor is not a subtractable constant — which is the version that matters
 

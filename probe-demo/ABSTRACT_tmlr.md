@@ -67,16 +67,21 @@ limitation: on a *perfectly recovering* model at full overlap, single-run gaps s
 That floor is not estimator noise: with the subspace already recovered, CCA − MCC
 reads out the angle between the frame a run converged to and the chosen basis
 (gap = 1 − cos φ), so it **measures how much axis-level identifiability a model
-class attains**. Used as an instrument, it finds that the iVAE variability condition of Khemakhem
-et al. (2020) does **not** bite as a threshold: in a design where the condition is
-exactly satisfiable — environment-dependent location and scale on every axis, no
-support shift, the number of environments swept across the nk+1 boundary — the
-floor declines only gently and monotonically (implied frame angle 24.3° → 18.1°)
-with no discontinuity at the boundary (d = 0.14, p = 0.62; bounded at ≤27% of the
-full rotation signature at 80% power). The theorem concerns the population limit
-and does not promise that a finite-sample optimiser finds the identified solution,
-so this is a measurement rather than a refutation — but it is the kind of direct
-evidence this very widely invoked condition mostly lacks. Crucially the floor is **not subtractable**: its height
+class attains**. Used as an instrument it answers a question the field states but rarely measures.
+If the optimiser has no rotational preference the frame angle is uniform on
+[0°, 45°] (Hungarian matching folds it there), giving a closed-form null:
+E[gap] = 1 − 2√2/π = 0.0997, SD = 0.0880, range [0, 0.2929]. **Every floor we
+measure sits on that law**, and one-sample KS rejects it nowhere — not for an
+isotropic prior, and not for conditional priors satisfying the iVAE variability
+condition of Khemakhem et al. (2020), whether the environment count merely meets
+nk+1 or exceeds it with a well-conditioned natural-parameter difference matrix
+(σ_min(L) = 1.65, κ = 9.3). The conclusion is stronger than "the condition does
+not bite as a threshold": **satisfying it leaves the recovered frame statistically
+indistinguishable from a uniformly random one.** Because the theorem concerns the
+population limit and does not promise that a finite-sample optimiser finds the
+identified solution, we report this as a measurement rather than a refutation —
+but it is the kind of direct evidence this widely invoked condition mostly lacks,
+and it suggests σ_min(L), not the environment count, as the axis to study. Crucially the floor is **not subtractable**: its height
 depends on the angle between the data's shift direction and the latent basis
 (0.087 → 0.151 when we rotate it), which on real data is precisely unobservable.
 Our own equivalence result is therefore best stated in gap units: no ρ-dependent
