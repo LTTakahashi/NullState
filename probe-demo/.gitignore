@@ -14,3 +14,4 @@ results_stage4_s*.csv
 results_alignment_s*.csv
 results_basis_rotation_s*.csv
 results_vc_s*.csv
+results_sigma_min_s*.csv

@@ -81,7 +81,12 @@ indistinguishable from a uniformly random one.** Because the theorem concerns th
 population limit and does not promise that a finite-sample optimiser finds the
 identified solution, we report this as a measurement rather than a refutation —
 but it is the kind of direct evidence this widely invoked condition mostly lacks,
-and it suggests σ_min(L), not the environment count, as the axis to study. Crucially the floor is **not subtractable**: its height
+Sweeping σ_min(L) directly at fixed environment count — constructing the spectrum
+of L with total prior variability held constant — makes the floor decline
+monotonically (0.115 → 0.076, with MCC genuinely improving) where the environment
+count did not, identifying σ_min as the right axis and giving the theorem's binary
+condition a continuous practical analogue. But the effect is bounded at ≈21% of the
+full rotation signature, and no conditioning level rejects the random-frame law. Crucially the floor is **not subtractable**: its height
 depends on the angle between the data's shift direction and the latent basis
 (0.087 → 0.151 when we rotate it), which on real data is precisely unobservable.
 Our own equivalence result is therefore best stated in gap units: no ρ-dependent
