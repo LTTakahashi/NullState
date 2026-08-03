@@ -360,6 +360,32 @@ phenomenon, state the estimand's invariance class, verify that the failure mode 
 outside it, and for a critical-threshold claim compare the threshold against the metric's own geometry
 at one's own marginal, dimension, scale and $k$.
 
+\section*{Reproducibility statement}
+
+All experiments are synthetic, CPU-only, and require no data download. Anonymized
+code and every result table are available at
+\url{https://anonymous.4open.science/r/ANON-PLACEHOLDER}, with \texttt{REPRODUCE.md}
+mapping each claim in this paper to the script that produces it. Because all
+result files are included, every analysis and figure can be regenerated in seconds
+without repeating the sweeps that produced them; the sweep commands are given for
+regeneration from scratch, and the three long campaigns are resumable and shard by
+seed.
+
+Three results need no model fitting at all and run in about five minutes total:
+the estimand $\times$ failure-mode table of Figure~\ref{fig:tax} together with the
+$\text{gap}=\gap$ identity, the oracle receipt for the threshold of
+\S\ref{sec:geom}, and the random-frame null and KS tests of \S\ref{sec:floor}.
+These carry the paper's central argument and involve no generative process or
+trained model, being properties of the estimands alone.
+
+The pipeline supporting \S\ref{sec:app} is gated: each of the three verification
+scripts prints per-check PASS/FAIL and exits non-zero on failure, and no
+downstream stage was run until the stage below it passed. The retired first
+version of the probe is retained in the artifact alongside a document recording
+why each of its numbers is void, so that the retraction described in
+\S\ref{sec:geom} is itself checkable: the oracle receipt reproduces the retracted
+threshold from the retired code.
+
 \section*{Broader impact statement}
 
 This work is methodological and uses only synthetic data. Its intended effect is to make claims about

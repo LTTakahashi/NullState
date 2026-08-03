@@ -40,7 +40,16 @@ defending results we have since retracted.
       URL"** field. Concealing it is a hard reject.
 - [ ] Confirm `\usepackage{tmlr}` has NO `[accepted]`/`[preprint]` option.
 - [ ] Re-run the anonymization scan (see below) on the final PDF.
-- [ ] Post the preprint (arXiv/bioRxiv) regardless — costs nothing, establishes date.
+- [ ] Post the preprint regardless — costs nothing, establishes date. Zenodo DOI
+      already serves this; arXiv needs endorsement (try verifying an institutional
+      email on the arXiv account first — that often auto-endorses cs.LG/stat.ML).
+- [ ] **Create the anonymized artifact and replace `ANON-PLACEHOLDER` in main.tex.**
+      Mirror the repo at https://anonymous.4open.science (paste the GitHub URL, set
+      an expiry past the review period) and paste the generated link into the
+      Reproducibility Statement. Do NOT link the real repo or the Zenodo record.
+- [ ] If the *same* paper is on Zenodo under your real name, that is a permitted
+      preprint, but do not cite it in the submission and do not add a
+      "code available at ..." line pointing to it.
 
 ```bash
 python3 -c "
