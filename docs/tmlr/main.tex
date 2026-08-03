@@ -7,10 +7,11 @@
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 
-\newcommand{\zlin}{\ensuremath{z_{\mathrm{sh}}}}
-\newcommand{\ziv}{\ensuremath{z_{\mathrm{sal}}}}
+\newcommand{\gap}{\ensuremath{\mathrm{CCA}\!-\!\mathrm{MCC}}}
+\newcommand{\smin}{\ensuremath{\sigma_{\min}(L)}}
 
-\title{No Overlap, No Invariance: An Identifiability Boundary for\\ Anchor-Free Disentanglement, and the Functionals That Survive It}
+\title{Every Recovery Metric Has an Invariance Class:\\ Manufactured Thresholds
+and Hidden Collapses in Latent-Variable Identifiability}
 
 % Authors are hidden by the tmlr package unless [accepted]/[preprint] is used.
 \author{\name Anonymous Author(s) \email anon@example.com \\
@@ -24,461 +25,348 @@
 \maketitle
 
 \begin{abstract}
-Many applications ask for a representation that is invariant to which domain a sample came from while
-retaining the biological or semantic factor of interest, and ask for it \emph{without} anchors: no paired
-samples, no shared labels, only two unaligned corpora. We study when this is achievable at all. We give
-an overlap-based boundary condition, that anchor-free invariance is identified only where the two domains
-share support, and we test it in a real regime of extreme scale and near-disjoint support: a
-$2{,}615{,}898$-cell primary reference and a $1{,}767{,}346$-cell in-vitro query. A shared-latent
-contrastive model fails decisively and reproducibly: a held-out adversary recovers the domain from the
-putatively invariant latent at $\geq 0.998$ balanced accuracy, unchanged when the salient capacity is
-tripled and when the decoder is conditioned on domain, while training converges normally. The failure is
-structural rather than optimization-related, because the encoder observes the domain directly and
-decoder-side conditioning cannot remove what the encoder has already written. We then ask what remains
-estimable when the per-sample invariant coordinate is not identified, and show that translation-invariant
-functionals are the natural answer: pairwise sliced-Wasserstein distances are invariant to an offset
-shared by the compared populations, which lets relative geometry be recovered without ever constructing
-an invariant coordinate. This route has its own precondition, that the offset be constant across the
-compared populations, and we test it directly rather than assuming it. It fails: per-population offsets
-are mutually inconsistent (mean cosine $0.15$, against $0.855$ within domain) and comparable in magnitude
-to the between-population separation, so individual distances are confounded. What survives is weaker but
-real: the induced \emph{ordering} still recovers the reference geometry (distance-matrix $r = 0.90$).
-The result is a graded answer, coordinates are not identified, distances are biased, orderings are
-estimable, and a reusable recipe for deciding which of the three a given problem admits.
+A recovery metric is defined by what it cannot see. We argue, and demonstrate twice, that every
+estimand of latent recovery has an \emph{invariance class}, and that a reported result is an artifact
+whenever the failure mode under test lies inside that class. First, $k$-nearest-neighbour recovery
+scores depend on the embedding only through its neighbour sets, so they are bit-identically invariant
+to the similarity group, which contains the orthogonal gauge freedom of an isotropic prior. A separate
+failure of the same metric manufactures a clean ``critical support overlap'' $\rho^{*}\approx 0.37$: we
+derive the curve in closed form, $R^{2}=1-4(1-\rho)^{3}$, so $\rho^{*}=1-4^{-1/3}$ is the zero-crossing
+of the metric's own extrapolation geometry, and we reproduce it on a \emph{perfectly identified oracle
+embedding}. Second, and more instructively, the rotation-sensitive estimand we built to repair the first
+problem is not an independent quantity at all: it equals $\gap$ identically, its zero set is therefore
+the axis-factorised maps, and it missed an entire real effect. Its blind region is moreover defined
+relative to a chosen ground-truth basis, so an invariance class is a property of the metric \emph{plus a
+coordinate choice}, one of which is unobservable on real data. We then turn the same quantity into an
+instrument. With the subspace recovered, $\gap = 1-\cos\varphi$ reads out the angle between the frame a
+run converged to and the chosen basis, and ``no rotational preference'' has the closed-form null
+$\varphi\sim U[0^{\circ},45^{\circ}]$, giving $E=0.0997$ and $\mathrm{SD}=0.0880$. Every floor we
+measure sits on that law and one-sample KS rejects it nowhere, including for conditional priors that
+satisfy the iVAE variability condition with a well-conditioned natural-parameter matrix. Sweeping
+$\smin$ directly at fixed environment count makes the floor decline monotonically, identifying $\smin$
+rather than the environment count as the axis to study, but bounds the effect at $\approx21\%$ of the
+full rotation signature. Finally, in a generative process where support overlap and removable batch
+magnitude are provably decoupled, whether overlap governs recovery turns out to be a property of the
+\emph{objective}: a faithful per-sample encoder is overlap-invariant (pre-registered,
+equivalence-tested, 25 seeds), while alignment objectives collapse recovery as overlap falls.
 \end{abstract}
 
 \section{Introduction}
 
-A recurring pattern across applied machine learning is the desire for a representation that discards
-\emph{where the data came from} while keeping \emph{what the data is}. In domain adaptation this is an
-invariant feature map; in generative modeling it is a disentangled latent; in scientific data analysis it
-is the hope of subtracting a measurement or environment effect to leave the underlying biology. The
-version of this problem we study is the hardest common one, which we call \emph{anchor-free}: we are given
-two unaligned corpora from two domains, with no paired samples, no shared instance labels, and no
-overlap-by-construction, and we are asked to learn a latent coordinate that is invariant to domain while
-remaining informative about the factor of interest.
+Work on disentanglement and latent recovery reports numbers: an MCC, a DCI score, a $k$-NN regression
+$R^{2}$, sometimes a threshold at which recovery ``breaks''. Each of those numbers is a function of an
+embedding, and each is \emph{invariant} to some group of transformations of that embedding. That
+invariance class is rarely stated, and it decides what the number can possibly show.
 
-Practitioners routinely attempt this with shared-latent generative models, in which a background latent is
-shared across domains and a salient latent absorbs what is unique to one of them, optionally with the
-decoder conditioned on a domain covariate. The implicit assumption is that the domain difference is a
-\emph{separable nuisance subspace}, something a model can be induced to route away from the shared
-coordinate. We ask when that assumption can hold, and what to do when it does not.
+Our claim is simple and, we think, under-appreciated:
 
-Our answer has three parts, and the third is the one we find most useful.
+\begin{quote}
+Every estimand of latent recovery has an invariance class. A reported result is an artifact whenever
+the failure mode under test lies inside that class.
+\end{quote}
 
-\paragraph{An overlap boundary.} We state, and then test, the condition under which anchor-free invariance
-is identified at all. If the two domains occupy essentially disjoint regions of input space, then domain
-is almost definitionally decodable from any representation that supports reconstruction, and, more
-importantly, there is no region in which a \emph{common} coordinate is even constrained: nothing ties the
-axis learned on one domain to the axis learned on the other. Anchor-free invariance is thus identified
-only on the overlap, and the failure is not a matter of capacity or regularization.
-
-\paragraph{A decisive empirical instance.} We test this in a regime that is unusually favorable for
-detecting the failure: two corpora totaling $4.4$ million samples with rich, well-characterized structure,
-where the domains are known a priori to be near-disjoint. A shared-latent contrastive model yields an
-adversary balanced accuracy of $0.998$ on the supposedly invariant latent. Tripling the salient capacity
-gives $0.999$; conditioning the decoder on the domain, the textbook remedy for a nuisance factor
-confounded with a condition, gives $0.998$. Training converges in every case, so this is not an
-optimization failure. We are explicit about what this does and does not establish: the adversary shows the
-domain difference is \emph{decodable}, not what it is \emph{made of}.
-
-\paragraph{What remains estimable, and a test of it.} The more useful question is what survives
-non-identifiability. We observe that the target of many downstream analyses is not the per-sample
-coordinate but a \emph{relative} quantity, and that relative quantities can be invariant to the very
-offset that defeats the coordinate: pairwise sliced-Wasserstein distances satisfy
-$W(\mathcal{A}+c, \mathcal{B}+c) = W(\mathcal{A},\mathcal{B})$, so a domain offset shared by both compared
-populations cancels exactly. This yields estimable functionals without any invariant coordinate. But the
-cancellation has a precondition, that the offset really is shared, and we treat that as an empirical claim
-to be tested rather than assumed. Testing it, we find it false in our setting: per-population offsets are
-mutually inconsistent and as large as the between-population separation. The distances are therefore
-biased. Yet the induced ordering is not: the recovered ranking reproduces the reference geometry at
-$r=0.90$. The practical output is a three-level ladder, coordinates, distances, orderings, and a procedure
-for determining which level a given problem supports.
+This is not a claim that particular metrics are bad. It is a claim about matching an estimand to a
+failure mode, and about stating the class explicitly so that a reader can check the match. We support
+it with two demonstrations. The second is the one we would ask a sceptical reader to weigh, because it
+concerns a metric we designed ourselves, argued for on correctness grounds, and gated before use.
 
 \paragraph{Contributions.}
-\begin{itemize}\itemsep2pt
-\item An overlap-based boundary condition for anchor-free invariance, with the mechanism made explicit
-(encoder-visible domain; decoder conditioning is insufficient by construction).
-\item A large-scale, reproducible negative result establishing the boundary empirically, robust across
-capacity and decoder-conditioning interventions, with the interpretive scope carefully separated from
-the measurement.
-\item A positive counterpart: translation-invariant functionals as the estimable object under
-non-identifiability, together with a direct test of their precondition, yielding the graded conclusion
-that orderings survive where distances do not.
-\item A diagnostic for a confound that afflicts any such study, distinguishing \emph{reference
-incompleteness} from \emph{genuine divergence} when a query is declared out-of-distribution, including a
-calibration trick that remains valid when the naive control fails.
-\end{itemize}
-
-\section{Setup and problem statement}
-\label{sec:setup}
-
-\paragraph{Anchor-free invariance.} Let $P$ and $Q$ be distributions over an input space $\mathcal{X}$,
-corresponding to two domains (in our instance, primary tissue and an in-vitro system). We observe two
-unaligned samples, $X_P \sim P$ and $X_Q \sim Q$, with no correspondence between them. Each sample carries
-an unobserved factor of interest $y$ (here, cell lineage) whose meaning is intended to be shared across
-domains. We seek an encoder $q(z \mid x)$ such that $z$ is (i) uninformative about the domain indicator
-$d \in \{P,Q\}$, and (ii) informative about $y$, using no paired samples and no shared labels.
-
-\paragraph{The shared-latent contrastive family.} A widely used approach factorizes the latent into a
-shared (background) part \zlin{} and a salient part \ziv{} that is active only for the target domain, so
-that domain-specific variation is absorbed by \ziv{} and \zlin{} carries the common factor. A decoder
-$p(x \mid \zlin, \ziv, d)$ may additionally be conditioned on $d$. We instantiate this family with
-contrastiveVI \citep{weinberger2023contrastivevi}, built on the variational single-cell framework of
-\citet{lopez2018scvi}; the argument below is about the family, not the implementation.
-
-\paragraph{Measurement.} We quantify invariance by the \emph{decodability} of the domain from the shared
-latent: a cross-validated classifier $\hat d(\zlin)$, scored by balanced accuracy. A value of $0.5$
-indicates invariance; a value near $1$ indicates the domain is fully recoverable. This is used strictly as
-an evaluation probe, never as a training signal.
-
-\paragraph{An overlap boundary condition (informal).} Consider the support overlap
-$\mathcal{O} = \mathrm{supp}(P) \cap \mathrm{supp}(Q)$. Two observations follow, and together they delimit
-what anchor-free invariance can mean.
-
-\emph{(a) Off the overlap, invariance is unconstrained.} If a region of input space is visited by only one
-domain, then no term in an anchor-free objective relates the coordinate assigned there to the coordinate
-assigned to any $Q$-region: the two domains' latent axes may be arbitrarily rotated, scaled, or translated
-relative to one another without penalty. A ``common'' axis is therefore not identified; it is chosen by
-inductive bias, not by data. This is the anchor-free analogue of the familiar point that unsupervised
-disentanglement is unidentifiable without inductive bias or supervision \citep{locatello2019challenging},
-and of the classical result that nonlinear ICA is unidentifiable in general
-\citep{hyvarinen1999nonlinear}, with the additional twist that here even a shared parameterization does not
-help, because the shared parameters are never jointly constrained.
-
-\emph{(b) When $\mathcal{O}$ has negligible mass, domain is decodable by construction.} If $P$ and $Q$ are
-near-disjoint, then $x$ determines $d$ almost surely, so any $z$ that retains enough information to
-reconstruct $x$ retains $d$. Crucially, this is a property of the \emph{encoder's input}, and conditioning
-the \emph{decoder} on $d$ cannot repair it: the decoder covariate can explain away the domain-specific
-\emph{mean shift} in the likelihood, but it does not remove the domain information the encoder has already
-written into $z$. This asymmetry is why the standard batch-conditioning remedy is expected to fail here.
-
-We stress that (b) alone is nearly a tautology, and we do not present it as a surprise. The substantive
-claim is (a) plus (b) together: anchor-free invariance is identified only on the overlap, so the
-interesting question for a practitioner is not ``did my model fail'' but ``does my problem have enough
-overlap to admit the target at all, and if not, what should I estimate instead.'' Sections
-\ref{sec:negative} through \ref{sec:precondition} answer that in a concrete, high-stakes setting.
-
-\section{A near-disjoint benchmark at atlas scale}
-\label{sec:benchmark}
-
-We need a testbed where (i) the two domains are large, (ii) their supports are known to be near-disjoint,
-and (iii) the factor of interest has independently known structure so that success and failure are
-distinguishable. Single-cell transcriptomics of in-vitro organoids versus primary fetal tissue provides
-exactly this (Fig.~\ref{fig:overview}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.92\linewidth]{figs/fig1.pdf}
-\caption{\textbf{The benchmark.} Two unaligned corpora, a $2{,}615{,}898$-cell primary reference and a
-$1{,}767{,}346$-cell in-vitro query, are co-embedded by variational reference surgery. Each query sample
-receives two calibrated scores (an off-manifold distance and a label-assignment entropy) that partition it
-into interpretable strata. The domains are near-disjoint by construction, which is what makes this a
-decisive test of the overlap boundary of Section~\ref{sec:setup}.}
-\label{fig:overview}
-\end{figure}
-
-\paragraph{Domains.} The primary domain is a harmonized reference of $2{,}615{,}898$ cells $\times$
-$61{,}497$ genes assembled from a first-trimester human brain atlas \citep{braun2023hdbca} and a fetal-body
-atlas \citep{cao2020fetal}, retrieved with raw counts from a public single-cell platform
-\citep{czi2025cellxgene}. The query domain is an integrated in-vitro atlas of $1{,}767{,}346$ organoid
-cells spanning $27$ differentiation protocols \citep{he2024hnoca}. The factor of interest, $y$, is cell
-lineage, for which curated ontology labels exist in both domains.
-
-\paragraph{Why near-disjoint.} The two domains differ simultaneously in biology (an in-vitro stress program
-absent from tissue) and in measurement (laboratory, dissociation, platform, ambient RNA). We verify the
-consequence rather than assume it: Section~\ref{sec:decomposition} shows that even query cells that map
-\emph{confidently} to this reference remain far from an \emph{independent} reference of the same tissue,
-i.e.\ the domain offset displaces essentially all query cells.
-
-\paragraph{Mapping and per-sample scores.} We map the query onto the reference by variational reference
-surgery \citep{lopez2018scvi,xu2021scanvi,lotfollahi2022scarches,gayoso2022scvitools}, obtaining a
-reference model (evidence lower bound $695.6$), a label-aware refinement ($736.1$), and a query projection
-($920.2$). Donor-level integration improves cross-batch mixing while preserving structure (integration
-LISI $6.10 \rightarrow 8.10$; label LISI $1.31 \rightarrow 1.44$) \citep{korsunsky2019harmony,luecken2022scib}.
-Each query sample receives two calibrated scores, an off-manifold distance and a label-assignment entropy,
-which together partition the query into interpretable strata (Fig.~\ref{fig:landscape}): confidently mapped
-($26.0\%$), weakly differentiated ($15.9\%$), ambiguous ($9.5\%$), \emph{off-manifold} ($38.4\%$),
-\emph{off-target} lineages that map confidently to a non-target identity ($5.3\%$), and quality-filtered
-($4.9\%$). Full construction details are in Appendix~\ref{app:benchmark}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig2.pdf}
-\caption{\textbf{Benchmark landscape.} (\textbf{a}) Query strata. (\textbf{b}) The two per-sample scores,
-with calibrated thresholds; the strata are regions of this plane. (\textbf{c}) Donor-level integration
-improves cross-batch mixing while preserving structure. (\textbf{d}) Sanity checks on the mapping. The
-\emph{off-manifold} stratum ($38.4\%$) is analyzed in Section~\ref{sec:decomposition}; the \emph{off-target}
-stratum ($5.3\%$) supplies the multi-population geometry of
-Sections~\ref{sec:estimable}--\ref{sec:precondition}.}
-\label{fig:landscape}
-\end{figure}
-
-The two strata that matter below are the \emph{off-manifold} stratum, the large ambiguous mass whose
-interpretation Section~\ref{sec:decomposition} addresses, and the \emph{off-target} stratum, a set of
-well-defined non-target lineages that provides the multi-population geometry used in
-Sections~\ref{sec:estimable}--\ref{sec:precondition}.
-
-\section{Result 1: anchor-free invariance is not identified in this regime}
-\label{sec:negative}
-
-We train the shared-latent contrastive model with primary cells as background and query cells as target
-($100{,}000$ each, $2{,}000$ highly variable genes, raw counts), then probe \zlin{} for domain
-decodability (Fig.~\ref{fig:negative}a).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig4.pdf}
-\caption{\textbf{Result 1: anchor-free invariance is not identified.} (\textbf{a}) A held-out adversary
-recovers the domain from the shared latent at $\geq 0.998$ balanced accuracy, unchanged by tripling the
-salient capacity or by conditioning the decoder on domain ($0.5$ is invariance; $<0.6$ would indicate
-success). (\textbf{b}) Training converges in every run, so the failure is structural rather than
-optimization-related. (\textbf{c}) Mechanism: with near-disjoint supports the encoder observes the domain
-directly, and decoder-side conditioning cannot remove what the encoder has already written.}
-\label{fig:negative}
-\end{figure}
-
-\paragraph{The result is decisive and intervention-robust.} The baseline model
-($\dim \ziv = 10$) gives adversary balanced accuracy $0.998$. Tripling the salient capacity
-($\dim \ziv = 30$), which by the separable-nuisance intuition should give the domain axis somewhere to go,
-gives $0.999$. Registering the domain as a batch covariate on the decoder, the standard remedy, gives
-$0.998$. Training converges normally in all three runs (Fig.~\ref{fig:negative}b), so the failure is not
-optimization. This is the pattern predicted by Section~\ref{sec:setup}: the encoder sees the domain, and
-decoder conditioning cannot unsee it (Fig.~\ref{fig:negative}c).
-
-\paragraph{What the probe does and does not establish.} We are deliberate here, because the two claims are
-easy to conflate. The adversary establishes that the domain difference is \emph{decodable} from \zlin{}. It
-does \emph{not} establish what that difference consists of: our two domains differ in biological state
-\emph{and} in laboratory, dissociation, platform, and ambient-RNA profile, and any one of these is
-pervasive enough on its own to make the domain decodable. The defensible claim is therefore
-methodological, that shared-latent contrastive methods do not yield a domain-invariant coordinate in this
-regime, whereas attributing the dominant axis to a specific biological cause requires the separate evidence
-of Section~\ref{sec:decomposition}. A second scope limit: the donor-level integration used for mapping does
-not correct the far deeper cross-domain divide, so that divide is exactly what \zlin{} inherits.
-
-\paragraph{Scope of the negative.} We tested one model family, thoroughly, under the two interventions its
-own logic prescribes. We do not claim that \emph{no} method can achieve invariance here; we claim that the
-shared-latent contrastive family cannot, and we give the structural reason, which is a property of the
-data (support disjointness) rather than of the estimator. Methods that intervene on the \emph{encoder},
-adversarially or through an invariance penalty \citep{ganin2016dann,arjovsky2019irm}, are the natural
-candidates to test next, though the theory of invariant representations under label shift
-\citep{zhao2019learning} suggests they trade invariance against informativeness rather than escaping the
-bound. A controlled overlap sweep, in which support overlap is varied and the transition located, is the
-experiment we would most like to add and is discussed in Section~\ref{sec:discussion}.
-
-\section{Result 2: translation-invariant functionals remain estimable}
-\label{sec:estimable}
-
-Non-identifiability of the coordinate does not imply that nothing is estimable. Many downstream questions
-are \emph{relative}: not ``where is this sample on the invariant axis'' but ``are these two populations
-different, and which pairs are more different.'' Relative quantities can be immune to the offset that
-defeats the coordinate.
-
-\paragraph{Proposition (translation invariance).} For populations $\mathcal{A}, \mathcal{B}$ and a shared
-offset $c$, the sliced-Wasserstein distance satisfies
-\[
-W(\mathcal{A}+c,\; \mathcal{B}+c) \;=\; W(\mathcal{A},\mathcal{B}),
-\]
-since every one-dimensional projection shifts both empirical measures identically
-\citep{bonneel2015sliced,peyre2019computational}. Hence if the domain offset in \zlin{} is a \emph{constant}
-vector across the compared populations, pairwise distances between them are unaffected by it, even though
-each population's absolute position is not identified.
-
-This is what makes the analysis possible at all: all compared populations lie in the \emph{same} domain
-(they are all query samples), so they plausibly share the domain offset, which then cancels.
-
-\paragraph{Instantiation.} We compare the off-target lineages of Section~\ref{sec:benchmark} in \zlin{},
-controlling sample size by a rarefaction-derived minimum ($N_{\min}=2000$) and calibrating against a
-matched-$N$ self-distance noise floor; a pair is called only when its bootstrap cross-distance interval
-clears the floor. Of $17$ off-target populations, four are well powered (adrenal-cortical $49{,}338$;
-skeletal muscle $30{,}629$; fibroblast $6{,}349$; cardiac muscle $2{,}534$). All six pairwise comparisons
-are real differences, clearing the floor by $14$ to $105\times$ ($W$ from $0.32$ to $0.99$ against floors of
-$0.007$ to $0.026$); the remaining $130$ small-$N$ comparisons are correctly returned as underpowered
-(Fig.~\ref{fig:geometry}). The recovered ordering is chemically sensible, with the two myogenic populations
-closest, though we emphasize in Section~\ref{sec:precondition} that separating grossly distinct lineages is
-a low bar and is an instrument check rather than a finding.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figs/fig5.pdf}
-\caption{\textbf{Results 2 and 3: translation-invariant functionals, and the limits of the cancellation.}
-(\textbf{a}) The four well-powered populations in the shared latent. (\textbf{b}) Pairwise
-sliced-Wasserstein distances. (\textbf{c}) Every well-powered pair clears its matched-$N$ noise floor by
-$14$ to $105\times$. (\textbf{d}) Multidimensional scaling of the distance matrix. The \emph{ordering}
-reproduces the reference geometry (distance-matrix $r=0.90$), whereas the individual distances are
-confounded by population-dependent offsets (mean offset cosine $0.15$; Section~\ref{sec:precondition}).}
-\label{fig:geometry}
-\end{figure}
-
-\section{Result 3: testing the precondition, and a graded answer}
-\label{sec:precondition}
-
-The cancellation in Section~\ref{sec:estimable} requires the offset $c$ to be \emph{the same} for the
-populations being compared. That is an assumption about data, not a theorem, and it is the assumption on
-which the entire analysis rests. It is also one that domain knowledge actively calls into question: if part
-of the domain shift is a stress response that scales with a population's secretory demand, then $c$ should
-differ by population. We therefore measured it.
-
-\paragraph{Procedure.} For each of the four well-powered lineages we estimated the domain offset directly
-as the difference between the query and reference centroids of that lineage, in a shared log-normalized
-highly-variable-gene space, using the matched ontology label in both domains ($2{,}500$ cells per lineage
-per domain). We then asked (i) whether these offsets are mutually consistent, (ii) whether they distort the
-between-population geometry, and (iii) whether the induced ordering survives.
-
-\paragraph{The offsets are not constant.} Mean pairwise cosine between per-lineage offsets is $0.15$,
-against $0.855$ for a within-domain consistency baseline computed on target-matched types. Only the two
-myogenic lineages align appreciably ($0.55$); the fibroblast offset is essentially orthogonal to the
-others. Moreover, each pairwise offset \emph{difference} is comparable in magnitude to the between-lineage
-separation itself (ratio $\approx 1$). The precondition fails, and not marginally.
-
-\paragraph{Consequence: distances are biased, ordering is not.} Because $c_{\mathcal{A}} \neq c_{\mathcal{B}}$,
-the measured distance carries a $\lVert c_{\mathcal{A}} - c_{\mathcal{B}} \rVert$ contribution, and the
-direction of the between-population difference is substantially rotated: the cosine between the query and
-reference inter-lineage vectors is only $0.29$. Individual distances therefore cannot be read as clean
-between-population metrics. What does survive is the rank structure: across the six pairs, the query and
-reference pairwise-distance matrices correlate at $r = 0.90$. The ordering is recovered even though the
-metric is not.
-
-\paragraph{A three-level ladder.} We suggest reporting results at whichever of the following a problem
-supports, and testing rather than assuming the transition:
 \begin{enumerate}\itemsep2pt
-\item \textbf{Coordinates} require overlap (Section~\ref{sec:setup}); unavailable here.
-\item \textbf{Distances} require a population-constant offset; testable by the procedure above; unavailable
-here.
-\item \textbf{Orderings} require only that the offset perturbation not reverse rank; available here
-($r=0.90$), and sufficient for many practical questions.
+\item \textbf{A measured taxonomy} (\S\ref{sec:tax}) of six estimands against corruptions that isolate
+one failure mode each. The blindness is complementary: no single estimand covers the space.
+\item \textbf{A manufactured threshold, derived} (\S\ref{sec:geom}). $k$-NN transfer gives
+$R^{2}=1-4(1-\rho)^{3}$ with zero-crossing $\rho^{*}=1-4^{-1/3}$, reproduced on an oracle embedding. We
+give the recipe that generates the constant and show it is not universal.
+\item \textbf{A hidden collapse in our own estimand} (\S\ref{sec:gap}). The matched-information oracle
+gap equals $\gap$ identically; its zero set is the axis-factorised maps, and it reports no effect on a
+real alignment-induced collapse.
+\item \textbf{Basis-dependence} (\S\ref{sec:basis}). The blind region is defined relative to a chosen
+ground-truth basis, so an invariance class is a property of the metric \emph{plus a coordinate choice}.
+\item \textbf{The floor as an instrument} (\S\ref{sec:floor}). $\gap$ reads out a frame angle; we give
+the closed-form random-frame null and use it to test the iVAE variability condition directly.
+\item \textbf{An application} (\S\ref{sec:app}) in which overlap and removable batch magnitude are
+provably decoupled, showing that whether overlap governs recovery is set by the objective.
 \end{enumerate}
-The contribution is less the particular verdict than the fact that level~2 is checkable with a short,
-cheap measurement that practitioners currently omit.
 
-\section{Result 4: separating reference incompleteness from genuine divergence}
-\label{sec:decomposition}
+All experiments are synthetic and fully controlled by design: the object of study is what the metrics
+can and cannot see, which requires knowing the ground truth exactly.
 
-Any study of this kind faces a confound that is rarely tested. When a query sample is declared
-out-of-distribution with respect to a reference, there are two explanations: the sample is genuinely
-divergent, or the reference is simply \emph{incomplete} and lacks the corresponding state. Conflating them
-inflates apparent divergence and, in applications, mislabels perfectly ordinary samples as anomalous. Our
-benchmark's large off-manifold stratum ($38.4\%$) is exactly such a case.
+\section{Setup}
 
-\paragraph{Structure, not noise.} Four diagnostics show the stratum is reproducible and structured rather
-than an artifact (Fig.~\ref{fig:diagnostics}): off-manifold samples show reduced canonical progenitor
-identity and elevated stress programs; their frequency rises monotonically with a per-sample complexity
-proxy ($0.13 \rightarrow 0.78$ across quintiles); it varies nearly $240$-fold across the $27$ protocols
-($0.4\%$ to $96.8\%$); and it concentrates in coherent clusters rather than scattering. The protocol
-gradient is itself diagnostic: protocols targeting states the reference covers score low, while protocols
-targeting states it lacks score high, which is the signature of reference incompleteness.
+Write $t\in\mathbb{R}^{n}$ for the true latent and $z$ for a learned embedding. We use four estimands.
+\textbf{$k$-NN-$R^{2}$} is the cross-validated $R^{2}$ predicting a true factor from $z$ by
+$k$-nearest-neighbour regression, and \textbf{$k$-NN transfer} is its cross-domain version, fit on one
+domain and scored on the other. \textbf{CCA} is the mean canonical correlation between $t$ and $z$, the
+weak notion of recovery up to an invertible linear map. \textbf{MCC} is the mean absolute correlation
+under the optimal one-to-one (Hungarian) matching of recovered to true coordinates, in Pearson and
+Spearman variants; the assignment is solved on a train split and scored held out. \textbf{DCI-D} is the
+disentanglement component of \citet{eastwood2018framework}. Unless stated otherwise $n=2$ and $N=4000$.
+
+\section{A taxonomy of what estimands cannot see}
+\label{sec:tax}
+
+We corrupt the \emph{true} latent in exactly one way at a time and score every estimand. There is no
+training and no generative model here: these are properties of the estimands themselves. A cell at its
+identity value means the estimand is blind to that corruption (Figure~\ref{fig:tax}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.92\linewidth]{figs/fig3.pdf}
-\caption{\textbf{The off-manifold stratum is structured, not noise.} (\textbf{a}) Reduced canonical
-progenitor identity with elevated stress programs. (\textbf{b}) Frequency rises monotonically with a
-per-sample complexity proxy. (\textbf{c}) Nearly $240$-fold variation across $27$ protocols ($0.4\%$ to
-$96.8\%$): protocols targeting states the reference covers score low, those targeting states it lacks score
-high, the signature of reference incompleteness. (\textbf{d},\textbf{e}) The stratum concentrates in
-coherent clusters and occupies contiguous territory rather than scattering.}
-\label{fig:diagnostics}
+\includegraphics[width=\textwidth]{figs/fig1.pdf}
+\caption{Estimand $\times$ failure mode. Each row applies one corruption to the true latent; each
+column is one estimand. Red marks cells within $0.05$ of the estimand's identity value on a genuine
+failure, that is, blindness. $k$-NN-$R^{2}$ and CCA cannot see a rotation; $\gap$ cannot see an
+axis-factorised map; MCC-Spearman and DCI-D cannot see a monotone reparametrisation.}
+\label{fig:tax}
 \end{figure}
 
-\paragraph{A direct test, and the confound it exposes.} The decisive test is whether off-manifold samples
-map onto an \emph{independent} reference of the same tissue. We projected them, together with a
-confidently-mapped control, onto an independent atlas \citep{velmeshev2023cortex}. The naive version of
-this test fails, and instructively: the domain offset displaces \emph{every} query sample from the
-independent reference, including the control (median distance $4.0$ versus $2.2$ within reference), under
-both projection and joint integration. Absolute ``mapped-on'' fractions are therefore uninterpretable, and
-we do not report them. This is the same pervasiveness established in Section~\ref{sec:negative}, now
-observed from a second direction.
+The classes, stated. $k$-NN-$R^{2}$ is exactly invariant to any map preserving the $k$-NN \emph{sets},
+which includes the similarity group
+$\mathrm{Sim}(d)=\text{translations}\rtimes(O(d)\times\mathbb{R}_{+})$; preservation of the ranking of
+pairwise distances is sufficient but not necessary, and exactness requires uniform weights and the
+$L^{2}$ metric. CCA is invariant to any affine map whose linear part is injective on the latent, which
+is strictly larger than $GL(d)$, and is therefore blind to \emph{linear} entanglement only:
+information-preserving nonlinear axis mixing is visible to it.
 
-\paragraph{The calibrated contrast.} The control, however, \emph{quantifies} the shared displacement, and
-the same cancellation logic applies: comparing off-manifold samples against the control removes it.
-Off-manifold samples are significantly further from the independent reference than controls
-(AUC $0.65$, Cliff's $\delta = 0.30$; $70\%$ exceed the control median and $15\%$ lie beyond its $95$th
-percentile; Fig.~\ref{fig:crossatlas}). This is confound-controlled evidence for a genuine divergence
-component over and above reference incompleteness, and it is obtained precisely by refusing to trust the
-uncalibrated measurement. We regard the pattern, naive control fails, calibrated contrast survives, as the
-transferable lesson.
+Two scope statements. First, the three corruption classes we instantiate are \emph{illustrative, not a
+partition}. Each row is an existence proof that an estimand at its identity value could not have
+detected that failure, not a coverage map. Second, $O(d)$ is the linear part of the stabiliser of an
+isotropic Gaussian prior but not its whole non-identifiability class, and the two are non-nested: the
+measure-preserving swirl $\theta\mapsto\theta+c\lVert t\rVert^{2}$ leaves $\mathcal{N}(0,I_{2})$
+exactly invariant, yet $k$-NN-$R^{2}$ plainly sees it ($0.94$, $0.79$, $0.53$ for $c=0.3,0.9,2.0$),
+while $k$-NN's class contains translations and rescalings that are not prior symmetries.
+
+\section{Demonstration 1: a threshold that is a property of the metric}
+\label{sec:geom}
+
+Consider a one-dimensional uniform shift: domain A has $t\sim U[0,w]$ and domain B has
+$t\sim U[w(1-\rho),w(2-\rho)]$, so the overlap coefficient is exactly $\rho$. A $k$-NN map fit on A and
+scored on B must extrapolate for the fraction $(1-\rho)$ of B lying beyond A's support, where its
+prediction saturates at the boundary. Integrating the resulting error,
+\[
+E[\text{err}^{2}]=\frac{w^{2}(1-\rho)^{3}}{3},\qquad
+\mathrm{Var}(t)=\frac{w^{2}}{12},\qquad
+R^{2}(\rho)=1-4(1-\rho)^{3},
+\]
+so the apparent threshold is $\rho^{*}=1-4^{-1/3}\approx0.370$, and the width $w$ cancels. Crucially
+this appears for an \textbf{oracle embedding} $z:=t$, which is perfectly identified by construction: a
+critical threshold that a perfectly identified embedding also exhibits cannot be about identifiability
+(Figure~\ref{fig:geom}a; mean absolute error $0.016$ at $N=8000$, measured crossing $0.377$, the
+residual offset a finite-$k$ smoothing bias that shrinks to $0.372$ as $k/n\to0$).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figs/fig6.pdf}
-\caption{\textbf{Result 4: separating reference incompleteness from genuine divergence.} (\textbf{a}) The
-domain offset displaces \emph{every} query sample from an independent reference, including the
-confidently-mapped control (medians $4.0$ and $4.4$ versus $2.2$ within reference), so absolute
-``mapped-on'' fractions are uninterpretable and are not reported. (\textbf{b}) Calibrating against the
-control removes the shared displacement: off-manifold samples are further from the independent reference
-than controls (AUC $0.65$, Cliff's $\delta=0.30$), confound-controlled evidence of genuine divergence over
-and above reference incompleteness.}
-\label{fig:crossatlas}
+\includegraphics[width=\textwidth]{figs/fig2.pdf}
+\caption{(a) The closed form matches an oracle embedding, so the threshold contains no model.
+(b) It is not scale-free in the embedding: at $d=10$, growing the irrelevant axes drags $\rho^{*}$ from
+$0.377$ to $0.808$. (c) It is a stable constant only for compact-support marginals; a Gaussian
+marginal's crossing drifts toward $0$ as $n$ grows.}
+\label{fig:geom}
+\end{figure}
+
+\paragraph{The constant is a recipe, not a universal.} It factors as
+$4=(1/\mathrm{Var}_{\text{shape}})\times(\text{second moment of the extrapolation-error law})
+=12\times\tfrac13$ for a unit uniform, so it is set by the marginal shape and the transfer
+construction. A triangular marginal gives a different but stable constant; a Gaussian marginal, having
+no support boundary, has no stable threshold at all. Embedding geometry moves it too, and the driver is
+per-axis \emph{scale} rather than dimension count (Figure~\ref{fig:geom}b,c). The practical check is
+therefore to compute the constant for one's own marginal, dimension, scale and $k$ before reading a
+threshold as a phenomenon.
+
+\paragraph{Two independent failures.} Rotation-blindness and this extrapolation artifact are distinct,
+and conflating them invites the wrong repair. A rotation-sensitive metric would \emph{not} have avoided
+the threshold: it appears on an embedding with no entanglement to be sensitive to, and any estimand
+built from a non-extrapolating predictor scored by a variance-normalised $R^{2}$ inherits the same
+curve and the same constant.
+
+\section{Demonstration 2: a hidden collapse in an estimand we built}
+\label{sec:gap}
+
+To repair Demonstration 1 we introduced a rotation-sensitive \emph{matched-information oracle gap}: add
+isotropic noise to $t$ until the resulting oracle carries the same information (CCA) as $z$, then
+difference MCC, so that the residual is attributable to entanglement rather than to a noisier
+embedding. It passed a correctness argument and a gate. It nonetheless reported no effect on a real
+alignment-induced collapse in which CCA fell from $0.99$ to $0.70$ (\S\ref{sec:app}).
+
+The reason is structural, and it reduces the estimand to something already in hand. The oracle family
+is isotropic noise on the \emph{true} latent, hence axis-factorised, hence every oracle satisfies
+$\mathrm{MCC}=\mathrm{CCA}$. Matching information forces $\mathrm{MCC}(\text{oracle})=\mathrm{CCA}(z)$,
+so
+\[
+\text{gap}\;=\;\mathrm{CCA}(z)-\mathrm{MCC}(z)\quad\text{identically}
+\]
+(maximum deviation $1\times10^{-4}$ across every corruption in Figure~\ref{fig:tax}). Its exact zero set
+is $\{\mathrm{MCC}=\mathrm{CCA}\}$, the \textbf{axis-factorised} maps, in which each recovered
+coordinate is a function of a single true coordinate. We therefore report $\gap$ directly and demote
+the oracle construction to a validation, which removes a step a reader would otherwise have to audit
+and makes the zero set self-evident rather than empirical.
+
+\paragraph{A correction.} We first characterised this blindness as ``blind to information loss''. That
+is false, and Figure~\ref{fig:tax} contains the counterexamples: our original information-loss rows
+merely happened to be axis-aligned, whereas common-mode noise scores $0.216$ and collapsing a
+\emph{rotated} axis scores $0.142$, the former comparable to the $0.293$ that a genuine $45^{\circ}$
+rotation produces. The correct characterisation is axis-factorisation. The alignment collapse evaded
+the gap because that particular failure is approximately axis-factorised in the frame the model
+converged to, which is a fact about the experiment rather than a property of the estimand.
+
+\section{Invariance classes depend on a coordinate choice}
+\label{sec:basis}
+
+$\{\mathrm{MCC}=\mathrm{CCA}\}$ is the axis-factorised set \emph{relative to the ground-truth basis one
+chose}. CCA is basis-free; Hungarian matching is not, because it asks whether recovered coordinate $i$
+tracks true coordinate $j$. The gap therefore inherits basis-dependence entirely through MCC, and
+rotating the ground-truth basis moves the blind region. In synthetic work that basis is a modelling
+choice; on real data no privileged basis for ``the true latent'' exists, so the blind region is
+positioned by a choice with no observable counterpart. An invariance class is thus a property of the
+metric \emph{plus a coordinate choice}, and one of those is often arbitrary.
+
+We tested the attack this implies. In our generative process the shifted direction \emph{is} a
+coordinate axis, so an alignment objective folding it is axis-factorised by construction, which would
+make \S\ref{sec:gap} an artifact of that coincidence. Placing the shifted direction at $45^{\circ}$ to
+the ground-truth basis and rerunning (128 runs, 8 seeds, with the faithful arm at the same angle as a
+basis-mismatch control), the gap does \emph{not} fire for the alignment arm: its excess over the control
+is $\leq0$ at every overlap. The attack is closed. What surfaced instead is a larger limitation. On the
+faithful arm at $\rho=1$, where the true gap is unambiguously zero, single runs span $[0.000,0.191]$ at
+$\theta=0^{\circ}$ and $[0.009,0.290]$ at $\theta=45^{\circ}$, the upper end matching what a genuine
+$45^{\circ}$ rotation produces. Scoring each run against whichever candidate basis it actually
+converged to collapses the $\theta=45^{\circ}$ gap from $0.112$ to $0.024$.
+
+\section{The floor is an instrument}
+\label{sec:floor}
+
+That spread is not estimator noise. With the subspace recovered ($\mathrm{CCA}\approx1$), MCC registers
+only the angle $\varphi$ between the frame a run converged to and the chosen basis; for $n=2$,
+$\mathrm{MCC}=\cos\varphi$, with Hungarian matching folding $\varphi$ into $[0^{\circ},45^{\circ}]$
+because a $90^{\circ}$ rotation is a permutation. Hence
+\[
+\text{gap}=1-\cos\varphi \qquad\Longleftrightarrow\qquad \varphi=\arccos(1-\text{gap}),
+\]
+mapping $[0,0.293]$ onto $[0^{\circ},45^{\circ}]$ (Figure~\ref{fig:floor}b). This is the rotational
+non-identifiability of an isotropic prior \citep{locatello2019challenging} measured directly, so the
+quantity reports \emph{how much axis-level identifiability a model class attains}.
+
+\paragraph{A closed-form null.} If the optimiser has no rotational preference then
+$\varphi\sim U[0^{\circ},45^{\circ}]$ and
+\[
+F(x)=\tfrac{4}{\pi}\arccos(1-x),\qquad E[\text{gap}]=1-\tfrac{2\sqrt2}{\pi}=0.0997,\qquad
+\mathrm{SD}=0.0880 .
+\]
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/fig3.pdf}
+\caption{(a) Empirical CDFs of $\gap$ at full overlap against the analytic random-frame law; one-sample
+KS rejects for no arm. (b) The gap-to-angle map. (c) Sweeping $\smin$ at fixed $n_{\rm env}=9$ with
+total prior variability held constant: the floor declines monotonically but never leaves the law.}
+\label{fig:floor}
+\end{figure}
+
+\paragraph{Testing the iVAE variability condition.} \citet{khemakhem2020vae} require the $nk\times nk$
+matrix $L$ of natural-parameter differences to be invertible, which needs $nk+1$ distinct auxiliary
+values. Across an isotropic-prior model and conditional priors with $n_{\rm env}\in\{2,3,5,9\}$,
+one-sample KS against the law rejects nowhere ($p$ from $0.08$ to $0.96$; Figure~\ref{fig:floor}a). The
+conclusion is stronger than ``the condition does not bite as a threshold'': satisfying it leaves the
+recovered frame \emph{statistically indistinguishable from a uniformly random one}.
+
+Two refinements protect that statement. First, nominal satisfaction is not effective satisfaction: at
+$n_{\rm env}=5$ the matrix $L$ is invertible but near-singular ($\smin=0.027$, $\kappa=451$), whereas
+$n_{\rm env}=9$ is well conditioned ($\smin=1.65$, $\kappa=9.3$) and still does not reject. Second, we
+swept $\smin$ \emph{directly} at fixed $n_{\rm env}=9$, constructing the spectrum of $L$ with total
+prior variability held constant (75 runs, 15 seeds). The floor then declines monotonically,
+$0.115\to0.076$, where the environment count did not, and the decline is genuine rather than a
+shrinking difference: MCC improves by $+0.018$ while CCA erodes only $-0.010$. But the effect is small
+(Spearman $-0.13$, $p=0.25$; ill- versus well-conditioned $d=+0.33$, $p=0.21$, against a design
+minimum detectable effect of $d=0.74$), and no conditioning level rejects the null, the best conditioned
+reaching $p=0.34$. So $\smin$, not the environment count, is the axis to study, and the theorem's binary
+condition does have a continuous practical analogue; in this regime that analogue is bounded at
+$\approx21\%$ of the full rotation signature. We report this as a measurement, not a refutation: the
+theorem concerns the population limit and does not promise that a finite-sample optimiser finds the
+identified solution.
+
+\section{Application: overlap governs recovery only through the objective}
+\label{sec:app}
+
+We build a generative process in which support overlap $\rho$ and a removable batch offset $\delta$ are
+\emph{provably} decoupled. Overlap is imposed symmetrically so that the pooled marginal is exactly
+uniform at every $\rho$; per-feature standardisation uses a fixed reference grid; the mixing map is
+non-saturating; and the observation depth is drawn independently of $\rho$, $\delta$ and domain. The
+decisive check is removability, the divergence-versus-$\lambda$ split of \citet{bendavid2010theory}: an
+affine batch map removes $100.0\%$ of $\delta$'s expression gap and $\approx0\%$ of $\rho$'s.
+
+\paragraph{A faithful encoder is overlap-invariant.} Across a conditional VAE and an iVAE with the
+variability condition satisfied and violated (900 runs, 25 seeds per cell), the change in $\gap$ from
+$\rho=1$ to $\rho=0.05$ is equivalence-tested (TOST) against a pre-registered effect size and is
+\textbf{equivalent in all three arms} ($d=-0.23$, $-0.21$, $+0.15$). Stated in gap units rather than
+standardised units, the null bounds any $\rho$-dependent effect at $0.070$, about a quarter of the full
+rotation signature. A power analysis showed the five-seed pilot could detect only $d\approx2$, which is
+why the design was expanded; the analysis plan was fixed after the pilot and before the confirmatory
+run.
+
+\paragraph{Alignment objectives collapse recovery.} On the same process, a moment-matching integration
+penalty makes recovery overlap-dependent: CCA falls from $0.99$ to $0.70$, with drops of $+0.199$
+($d=1.67$) and $+0.291$ ($d=2.37$) at two strengths (Figure~\ref{fig:app}). The failure is stochastic,
+a rising \emph{fraction} of runs folding the shifted axis as overlap shrinks. An adversarial objective
+reproduces it in direction and significance ($+0.101$, $d=1.08$) but at roughly a third the magnitude,
+so the effect is a property of aligning rather than of one penalty, with strongly mechanism-dependent
+size. We report the shape conservatively: only one of four arms is strictly monotone in $\rho$ and only
+one licenses a segmented-over-linear fit on BIC, so we claim a large but saturating degradation rather
+than a threshold, and the clean dose-response is in alignment strength rather than in overlap.
+Crucially, $\gap$ registers none of this (Figure~\ref{fig:app}c), which is Demonstration 2.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/fig4.pdf}
+\caption{(a) A faithful per-sample encoder is flat in $\rho$; alignment objectives collapse.
+(b) The collapse is stochastic. (c) $\gap$ sits on the random-frame mean throughout and is blind to the
+effect in (a), because the folding is approximately axis-factorised.}
+\label{fig:app}
 \end{figure}
 
 \section{Related work}
 
-\paragraph{Identifiability of latent variables.} That unsupervised disentanglement is unidentifiable
-without inductive bias or supervision is established both classically, through the non-uniqueness of
-nonlinear ICA \citep{hyvarinen1999nonlinear}, and empirically at scale
-\citep{locatello2019challenging}; identifiability can be restored with auxiliary variables
-\citep{khemakhem2020vae}. Our setting differs in that the sought factor is not a generic latent but the
-domain indicator, and the obstruction is not the usual rotational ambiguity but the absence of a region in
-which the two domains' axes are jointly constrained.
-
-\paragraph{Domain adaptation and invariant representations.} Classical bounds relate target error to
-source error plus a divergence between domains \citep{bendavid2010theory}, and are vacuous when that
-divergence is maximal, which is the regime we study; correspondingly, adaptation is impossible without a
-distributional-proximity assumption \citep{bendavid2010impossibility}. Adversarial feature alignment
-\citep{ganin2016dann} and invariance penalties \citep{arjovsky2019irm} intervene on the encoder rather
-than the decoder, which our analysis identifies as the necessary locus; nonetheless
-\citet{zhao2019learning} show that enforcing invariance can provably hurt when label distributions differ,
-so encoder-side methods are not a free escape. The overlap condition we emphasize is the representation
-analogue of the positivity/overlap assumption in causal inference, which is known to fail silently in high
-dimensions \citep{damour2021overlap}.
-
-\paragraph{Cross-domain integration in single-cell data.} Reference mapping and batch integration are
-mature \citep{lopez2018scvi,xu2021scanvi,lotfollahi2022scarches,korsunsky2019harmony,luecken2022scib}, and
-contrastive latent-variable models are the standard tool for isolating condition-specific variation
-\citep{weinberger2023contrastivevi}. Our results delimit where that toolchain's invariance claim holds,
-and offer the translation-invariance route where it does not.
+\citet{locatello2019challenging} established that unsupervised disentanglement is unidentifiable
+without inductive bias, and \citet{khemakhem2020vae} gave auxiliary-variable conditions that restore
+identifiability; \citet{higgins2018towards} framed disentanglement group-theoretically, which is the
+vocabulary our thesis lives in. Our contribution is neither a new metric nor a new identifiability
+result: it is that the invariance class of the \emph{estimand} determines which failures are observable
+at all, and that this class depends on a coordinate choice. On the evaluation side,
+\citet{eastwood2018framework} introduced DCI and \citet{eastwood2023dcies} connected it to
+identifiability notions, and MCC is standard in nonlinear ICA. Closest in spirit is work observing that
+disentanglement metrics disagree with one another, but we are aware of no treatment that derives a
+reported threshold as a metric-geometry constant, or that instruments the identifiability floor against
+a closed-form random-frame null. For the application, over-correction in domain integration is a
+recognised failure mode with dedicated methods and metrics; our point there is narrower, that whether
+overlap governs recovery is set by the objective. \citet{bendavid2010theory} supply the
+divergence/$\lambda$ decomposition we use to certify that our two knobs are separable, and
+\citet{bendavid2010impossibility} the impossibility result that motivates why an unsupervised
+separation of the two is not available in general.
 
 \section{Discussion and limitations}
-\label{sec:discussion}
 
-\paragraph{What we would add next.} The single most valuable addition is a \emph{controlled overlap
-sweep}: constructing paired corpora whose support overlap can be dialed from complete to disjoint, and
-locating the transition at which anchor-free invariance stops being recoverable. Our evidence establishes
-the failure at one extreme point, with the mechanism, but a sweep would convert a boundary \emph{claim}
-into a measured boundary \emph{curve}. A complementary experiment probes what \zlin{} retains
-\emph{besides} domain, since a representation from which both domain and lineage are decodable is entangled
-rather than merely broken, and the two have different remedies.
+The taxonomy is illustrative rather than exhaustive: three failure modes and six estimands, each row an
+existence proof rather than a coverage map. The geometry constant is not universal, being fixed only at
+a given marginal shape, embedding dimension, per-axis scale and $k$, and existing as a stable constant
+only for compact-support marginals. The quantity $\gap$ sits on an identifiability floor rather than a
+zero baseline and is not interpretable per run; worse, that floor is \emph{not subtractable}, because
+its height depends on the angle between the data's shift direction and the latent basis, which is
+exactly the unobservable quantity on real data. The recovery-invariance null is for a regime in which
+the shifted factor is decodable within a domain, and the paired alignment result supplies the other
+side. Our variability-condition measurement is bounded rather than zero, and $n_{\rm env}=9$ carries
+the most hint of an effect; resolving it would need roughly sixty to eighty seeds at the
+best-conditioned level. Finally, all experiments are synthetic by design, and we make no claim that
+these particular numbers transfer to any given real dataset.
 
-\paragraph{Limitations.} (i) The negative is established for one model family; we argue from a property of
-the data, but a broader sweep of estimators would strengthen the generalization. (ii) The offset-constancy
-test is conducted in expression space rather than in \zlin{}, as a tractable proxy; a latent-space version
-requires reference samples to be passed through the trained model. (iii) Our factor-of-interest labels are
-themselves model-assigned for the query domain, so the ordering validation inherits any systematic labeling
-error. (iv) The well-powered populations are grossly distinct lineages, a low bar for the instrument; the
-ordering result should not be read as a discovery about the underlying biology.
-
-\paragraph{Takeaway.} The practical message is not that a particular model failed. It is that anchor-free
-invariance carries an overlap precondition that is rarely checked, that the estimable object under
-non-identifiability is a translation-invariant functional rather than a coordinate, and that this
-functional carries a precondition of its own, which is cheap to test and, in at least one realistic
-setting, false. Reporting the highest rung of the coordinate/distance/ordering ladder that a problem
-actually supports seems to us a better default than reporting coordinates and hoping.
+The practical recommendation is a check with a receipt. Before reading a recovery result as a
+phenomenon, state the estimand's invariance class, verify that the failure mode of interest lies
+outside it, and for a critical-threshold claim compare the threshold against the metric's own geometry
+at one's own marginal, dimension, scale and $k$.
 
 \section*{Broader impact statement}
-This work analyzes representation learning on public, de-identified cell-atlas data and introduces no new
-data collection. Its main societal relevance is indirect and, we believe, positive: it argues against
-over-reading model-derived ``invariant'' coordinates in scientific applications, a failure mode that can
-produce confident but unsupported biological conclusions. We identify no significant risk of harm.
+
+This work is methodological and uses only synthetic data. Its intended effect is to make claims about
+latent recovery easier to check, which we expect to reduce rather than increase the risk of over-claimed
+representation-learning results being carried into downstream applications.
 
 \bibliographystyle{tmlr}
 \bibliography{refs}
-
-\appendix
-\section{Benchmark construction details}
-\label{app:benchmark}
-Reference assembly, gene-space harmonization, quality control, the stabilizers required for the query
-projection at this scale, threshold calibration for the two per-sample scores, and the full stratum
-definitions are provided in the supplementary material, together with run logs, derived data, and code
-sufficient to reproduce every number reported above.
 
 \end{document}
