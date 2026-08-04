@@ -31,9 +31,9 @@ echo ">> exporting to $DEST"
 mkdir -p "$DEST"
 
 # --- the study itself (tracked files only, so nothing local sneaks in) --------
-( cd "$REPO" && git ls-files probe-demo ) | while read -r f; do
-  mkdir -p "$DEST/$(dirname "${f#probe-demo/}")"
-  cp "$REPO/$f" "$DEST/${f#probe-demo/}"
+( cd "$REPO" && git ls-files identifiability ) | while read -r f; do
+  mkdir -p "$DEST/$(dirname "${f#identifiability/}")"
+  cp "$REPO/$f" "$DEST/${f#identifiability/}"
 done
 
 # --- the figure script, repointed at the local tree ---------------------------

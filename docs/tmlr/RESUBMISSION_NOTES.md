@@ -60,6 +60,6 @@ print([w for w in ['Takahashi','Washington','WSU','Voiland','NullState'] if w.lo
 
 ## Reproduce the figures
 ```bash
-python make_figs_v3.py     # reads probe-demo/results_*.csv
+python make_figs_v3.py     # reads identifiability/results_*.csv
 tectonic -X compile main.tex
 ```

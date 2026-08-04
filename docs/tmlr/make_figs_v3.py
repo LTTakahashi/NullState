@@ -1,4 +1,4 @@
-"""Figures for the invariance-class paper, generated from the probe-demo results."""
+"""Figures for the invariance-class paper, generated from the identifiability results."""
 from __future__ import annotations
 import sys, os
 import numpy as np
@@ -8,7 +8,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-PROBE = "/home/LTTakahashi/NullState/probe-demo"
+PROBE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__)))), "identifiability")
 sys.path.insert(0, PROBE)
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs")
 os.makedirs(OUT, exist_ok=True)
@@ -82,7 +83,7 @@ def fig1_taxonomy():
 # ---------------------------------------------------------------- FIGURE 2
 def fig2_geometry_constant():
     """The manufactured threshold, and why it is a recipe not a universal."""
-    from verify_closed_form import make, transfer_r2, analytic, zero_crossing, RHOS
+    from analysis.closed_form import make, transfer_r2, analytic, zero_crossing, RHOS
     fig = plt.figure(figsize=(6.6, 2.3))
     gs = gridspec.GridSpec(1, 3, wspace=0.38)
 
@@ -131,13 +132,13 @@ def fig2_geometry_constant():
 # ---------------------------------------------------------------- FIGURE 3
 def fig3_floor_instrument():
     """The floor is a random frame; sigma_min(L) is the right axis."""
-    from analyze_random_frame_null import analytic_moments, cdf, GAP_MAX, ks_test
+    from analysis.random_frame_null import analytic_moments, cdf, GAP_MAX, ks_test
     fig = plt.figure(figsize=(6.6, 2.3))
     gs = gridspec.GridSpec(1, 3, wspace=0.38)
 
     # (a) pooled empirical CDF vs the analytic random-frame law
     ax = fig.add_subplot(gs[0])
-    s4 = pd.read_csv(f"{PROBE}/results_stage4_n25.csv")
+    s4 = pd.read_csv(f"{PROBE}/results/main_sweep.csv")
     s4 = s4[(s4.rho == 1.0) & (s4.delta == 0.0)]
     s4 = s4.assign(gap=s4.learned_cca - s4.learned_mcc)
     xs = np.linspace(0, GAP_MAX, 300)
@@ -164,7 +165,7 @@ def fig3_floor_instrument():
 
     # (c) sigma_min sweep
     ax = fig.add_subplot(gs[2])
-    sm = pd.read_csv(f"{PROBE}/results_sigma_min.csv")
+    sm = pd.read_csv(f"{PROBE}/results/sigma_min.csv")
     g = sm.groupby("s_level").agg(x=("sigma_min", "mean"), y=("gap", "mean"),
                                   e=("gap", "sem")).sort_values("x")
     ax.errorbar(g.x, g.y, yerr=g.e, fmt="o-", color=C_SEE, ms=4, capsize=2)
@@ -184,7 +185,7 @@ def fig4_application():
     """Overlap governs recovery iff the objective aligns."""
     fig = plt.figure(figsize=(6.6, 2.3))
     gs = gridspec.GridSpec(1, 3, wspace=0.38)
-    al = pd.read_csv(f"{PROBE}/results_alignment.csv")
+    al = pd.read_csv(f"{PROBE}/results/alignment.csv")
     rhos = sorted(al.rho.unique(), reverse=True)
     style = {"faithful": (C_SEE, "faithful encoder"),
              "mix_200": ("#e08a1e", r"moment-match $\lambda{=}200$"),
@@ -216,7 +217,7 @@ def fig4_application():
         s = al[al.arm == arm]
         mu = [(s[s.rho == r].cca - s[s.rho == r].mcc).mean() for r in rhos]
         ax.plot(rhos, mu, "o-", color=col, ms=3.5, lw=1.2)
-    from analyze_random_frame_null import analytic_moments
+    from analysis.random_frame_null import analytic_moments
     m, _ = analytic_moments()
     ax.axhline(m, color="#333", ls="--", lw=1.0)
     ax.text(0.45, m + 0.008, "random-frame mean", fontsize=6.2)
