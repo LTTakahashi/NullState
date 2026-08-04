@@ -65,3 +65,10 @@ docs/manuscript/main_docx.tex
 
 # TMLR anonymized supplement (regenerable)
 docs/tmlr/tmlr_supplementary.zip
+
+# TMLR build intermediates
+docs/tmlr/*.bbl
+docs/tmlr/*.blg
+
+# exported anonymized artifact (regenerate with scripts/export_artifact.sh)
+nullstate-artifact/

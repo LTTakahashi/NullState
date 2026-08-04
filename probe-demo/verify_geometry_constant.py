@@ -19,9 +19,16 @@ the marginal shape, embedding scale, and k (see verify_closed_form.py). Check th
 oracle first.
 """
 from __future__ import annotations
+import os
+import sys
 import numpy as np
-from dgp import DGPConfig, generate            # v1 (retired) DGP
-from metrics import cross_domain_transfer       # v1 (retired) kNN transfer metric
+
+# The v1 code is retired and lives in archive_v1/. We import it deliberately:
+# the point of this script is that the RETRACTED metric, run on a perfectly
+# identified oracle embedding, still produces the retracted threshold.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "archive_v1"))
+from dgp import DGPConfig, generate            # noqa: E402  v1 (retired) DGP
+from metrics import cross_domain_transfer      # noqa: E402  v1 (retired) metric
 
 RHOS = [1.0, 0.85, 0.7, 0.6, 0.5, 0.4, 0.3, 0.25, 0.15, 0.05]
 

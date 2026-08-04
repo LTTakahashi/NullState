@@ -8,6 +8,26 @@ NullState is a computational-biology project that asks whether the *off-target* 
 populations produced when human organoid differentiation fails **converge** across germ
 layers toward shared "default" states, or fail in **lineage-specific** ways.
 
+> ### Two research strands
+> This repository holds two related but separable bodies of work.
+>
+> **1. The biology (this README).** The organoid off-target question, the HNOCA
+> compute pilot, and the manuscript in [`docs/manuscript/`](docs/manuscript/).
+>
+> **2. Identifiability and evaluation methodology**
+> ([`probe-demo/`](probe-demo/README.md)). Attempting Aim 2 raised a question the
+> biology could not settle: *what can a latent-recovery metric actually detect?*
+> That became a self-contained, synthetic, CPU-only study with its own paper in
+> [`docs/tmlr/`](docs/tmlr/) — the finding being that every recovery estimand has
+> an invariance class, and a result is an artifact whenever the failure mode under
+> test lies inside it. It needs no data download and is the fastest thing here to
+> verify: three commands, about five minutes. Start at
+> [`probe-demo/REPRODUCE.md`](probe-demo/REPRODUCE.md).
+>
+> The two strands share a repository because the second grew out of the first, and
+> because the first strand's early analysis is the worked example the second
+> corrects. Retired work is kept, labelled, and explained rather than deleted.
+
 ## Central Hypothesis
 Off-target states form a **structured mixture**: a subset converging across germ layers
 toward shared default states, and a subset that is lineage-bound.
@@ -76,11 +96,14 @@ python scripts/run_pilot.py --skip-to-step 2 --config-dir config/
 NullState/
 ├── config/            YAML config (paths, params, gene sets)
 ├── data/              Atlases (gitignored; see data/README.md)
-├── docs/              Research strategy, specific aims, execution plan
+├── docs/              Research strategy, aims, execution plan
+│   ├── manuscript/    Biology manuscript (LaTeX, figures, supplement)
+│   └── tmlr/          Identifiability paper (anonymized submission build)
 ├── env/               Conda environment definition
 ├── models/            Trained scVI/scANVI weights (gitignored)
 ├── reports/           Pilot report (PDF + LaTeX), figures, run artifacts
 ├── scripts/           Pipeline & data-retrieval scripts
+├── probe-demo/        Identifiability & metric-invariance study (synthetic, standalone)
 ├── src/               Core package
 │   ├── data/          Reference construction, retrieval, schema discovery
 │   ├── mapping/       scVI/scANVI training, scoring, classification
@@ -96,6 +119,28 @@ NullState/
 - Cao et al. "A human cell atlas of fetal gene expression." *Science* 2020.
 
 See [`data/README.md`](data/README.md) for download instructions.
+
+## Outputs
+
+| output | where |
+|---|---|
+| Pilot report (gates, figures, limitations) | [`reports/nullstate_pilot_report.pdf`](reports/nullstate_pilot_report.pdf) |
+| Biology manuscript | [`docs/manuscript/`](docs/manuscript/) |
+| Identifiability paper (anonymized build) | [`docs/tmlr/`](docs/tmlr/) |
+| Identifiability code, results and reproduction guide | [`probe-demo/`](probe-demo/README.md) |
+
+## Reproducibility
+
+The `probe-demo/` study is fully reproducible from this repository: it is
+synthetic, CPU-only, and every headline result table is committed, so each
+analysis and figure regenerates in seconds without repeating the sweeps that
+produced it. Its pipeline is **gated** — three verification scripts print
+per-check PASS/FAIL and exit non-zero on failure, and no downstream stage was run
+until the stage below it passed. See
+[`probe-demo/REPRODUCE.md`](probe-demo/REPRODUCE.md) for a claim-to-script map.
+
+The biology pipeline requires the source atlases; see
+[`data/README.md`](data/README.md) for download instructions.
 
 ## License
 Released under the [MIT License](LICENSE).

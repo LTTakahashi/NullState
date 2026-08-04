@@ -55,6 +55,15 @@ Numbers circulated in conversation as "rho=0.25 -> -6.0" and "rho=0.05 -> -14.7"
 came from an ad-hoc script that never wrote to disk. They are not reproducible
 from any file in this repository and should be treated as withdrawn.
 
+## Why this code is still here
+
+`dgp.py` and `metrics.py` are imported on purpose by `../verify_geometry_constant.py`.
+That script runs the RETRACTED metric on a perfectly identified oracle embedding
+and recovers the retracted threshold (1 - 4^(-1/3)), which is what makes the
+retraction checkable rather than merely asserted. `README_v1_retracted.md` is the
+original README, kept unedited; its TL;DR claims a phase transition that item 5
+above shows the data never supported.
+
 ## Replacement
 
 `dgp2.py` + `verify_dgp2.py` (Stage-1 decoupling gate), `metrics2.py`
