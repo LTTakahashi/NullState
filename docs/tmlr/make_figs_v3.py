@@ -197,8 +197,9 @@ def fig3_floor_instrument():
 # ---------------------------------------------------------------- FIGURE 4
 def fig4_application():
     """Overlap governs recovery iff the objective aligns."""
-    fig = plt.figure(figsize=(6.6, 2.3))
-    gs = gridspec.GridSpec(1, 3, wspace=0.38)
+    # taller, with room reserved at the bottom for one shared legend
+    fig = plt.figure(figsize=(6.6, 2.7))
+    gs = gridspec.GridSpec(1, 3, wspace=0.38, bottom=0.30)
     al = pd.read_csv(f"{PROBE}/results/alignment.csv")
     rhos = sorted(al.rho.unique(), reverse=True)
     style = {"faithful": (C_SEE, "faithful encoder"),
@@ -215,7 +216,7 @@ def fig4_application():
                     capsize=1.5, label=lab)
     ax.set_xlabel(r"support overlap $\rho$"); ax.set_ylabel("CCA (subspace recovery)")
     ax.set_title("(a) recovery vs overlap", fontsize=8)
-    ax.legend(frameon=False, fontsize=6, loc="lower right")
+    handles, labels = ax.get_legend_handles_labels()
 
     ax = fig.add_subplot(gs[1])
     for arm, (col, lab) in style.items():
@@ -237,6 +238,10 @@ def fig4_application():
     ax.text(0.45, m + 0.008, "random-frame mean", fontsize=6.2)
     ax.set_xlabel(r"support overlap $\rho$"); ax.set_ylabel("CCA $-$ MCC")
     ax.set_title("(c) the gap sees none of it", fontsize=8)
+
+    fig.legend(handles, labels, loc="lower center", ncol=4, frameon=False,
+               fontsize=7, bbox_to_anchor=(0.5, -0.01), handlelength=1.6,
+               columnspacing=1.4)
     fig.savefig(f"{OUT}/fig4.pdf"); plt.close(fig)
     print("fig4 done")
 
