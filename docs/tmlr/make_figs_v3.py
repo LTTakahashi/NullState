@@ -235,7 +235,8 @@ def fig4_application():
     from analysis.random_frame_null import analytic_moments
     m, _ = analytic_moments()
     ax.axhline(m, color="#333", ls="--", lw=1.0)
-    ax.text(0.45, m + 0.008, "random-frame mean", fontsize=6.2)
+    ax.text(0.03, m + 0.004, "random-frame mean", fontsize=6.2, color="#333",
+            ha="left", va="bottom")
     ax.set_xlabel(r"support overlap $\rho$"); ax.set_ylabel("CCA $-$ MCC")
     ax.set_title("(c) the gap sees none of it", fontsize=8)
 
