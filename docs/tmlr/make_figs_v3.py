@@ -98,8 +98,9 @@ def fig1_taxonomy():
 def fig2_geometry_constant():
     """The manufactured threshold, and why it is a recipe not a universal."""
     from analysis.closed_form import make, transfer_r2, analytic, zero_crossing, RHOS
-    fig = plt.figure(figsize=(6.6, 2.3))
-    gs = gridspec.GridSpec(1, 3, wspace=0.38)
+    from matplotlib.ticker import NullLocator, NullFormatter
+    fig = plt.figure(figsize=(6.9, 2.35))
+    gs = gridspec.GridSpec(1, 3, wspace=0.46)
 
     ax = fig.add_subplot(gs[0])
     meas = [transfer_r2(*make(r)) for r in RHOS]
@@ -113,7 +114,7 @@ def fig2_geometry_constant():
     ax.text(zc + 0.03, -2.0, r"$\rho^*=1-4^{-1/3}$" "\n" r"$=0.370$",
             fontsize=6.5, color=C_BLIND)
     ax.set_xlabel(r"support overlap $\rho$"); ax.set_ylabel("kNN transfer $R^2$")
-    ax.set_title("(a) a threshold with no model in it", fontsize=8)
+    ax.set_title("(a) a threshold with no model in it", fontsize=7.5)
     ax.legend(frameon=False, loc="lower right")
 
     ax = fig.add_subplot(gs[1])
@@ -125,7 +126,7 @@ def fig2_geometry_constant():
     ax.text(0.0015, zc + 0.02, "1-D value 0.370", fontsize=6.3)
     ax.set_xlabel("scale of irrelevant axes ($d{=}10$)")
     ax.set_ylabel(r"apparent $\rho^*$")
-    ax.set_title("(b) it moves with embedding scale", fontsize=8)
+    ax.set_title("(b) it moves with embedding scale", fontsize=7.5)
 
     ax = fig.add_subplot(gs[2])
     ns = [2000, 8000, 32000]
@@ -135,10 +136,15 @@ def fig2_geometry_constant():
             z = zero_crossing(RHOS, [transfer_r2(*make(r, marginal=marg, n=n)) for r in RHOS])
             ys.append(z if z is not None else 0.0)
         ax.plot(ns, ys, "o-", color=col, ms=4, label=marg)
-    ax.set_xscale("log"); ax.set_xlabel("$n$ per domain")
+    ax.set_xscale("log")
+    ax.set_xticks(ns)
+    ax.set_xticklabels(["2k", "8k", "32k"])
+    ax.xaxis.set_minor_locator(NullLocator())
+    ax.xaxis.set_minor_formatter(NullFormatter())
+    ax.set_xlabel("$n$ per domain")
     ax.set_ylabel(r"apparent $\rho^*$")
-    ax.set_title("(c) stable only for compact support", fontsize=8)
-    ax.legend(frameon=False)
+    ax.set_title("(c) stable only for compact support", fontsize=7.5)
+    ax.legend(frameon=False, fontsize=6.5, loc="center right")
     fig.savefig(f"{OUT}/fig2.pdf"); plt.close(fig)
     print("fig2 done")
 
