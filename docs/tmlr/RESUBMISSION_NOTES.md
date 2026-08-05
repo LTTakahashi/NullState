@@ -44,9 +44,11 @@ defending results we have since retracted.
       already serves this; arXiv needs endorsement (try verifying an institutional
       email on the arXiv account first — that often auto-endorses cs.LG/stat.ML).
 - [ ] **Create the anonymized artifact and replace `ANON-PLACEHOLDER` in main.tex.**
-      Mirror the repo at https://anonymous.4open.science (paste the GitHub URL, set
-      an expiry past the review period) and paste the generated link into the
-      Reproducibility Statement. Do NOT link the real repo or the Zenodo record.
+      The study lives at <https://github.com/LTTakahashi/identifiability>. Its LICENSE names the copyright
+      holder, so do NOT mirror it directly: run `tools/export_anonymous.sh` in
+      that repo, push the de-identified copy to a new repo, mirror THAT at
+      https://anonymous.4open.science, and paste the link into the
+      Reproducibility Statement. Do not link the real repo or the Zenodo record.
 - [ ] If the *same* paper is on Zenodo under your real name, that is a permitted
       preprint, but do not cite it in the submission and do not add a
       "code available at ..." line pointing to it.

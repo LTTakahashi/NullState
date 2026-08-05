@@ -8,8 +8,22 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-PROBE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "identifiability")
+# The study now lives in its own repository:
+#     https://github.com/LTTakahashi/identifiability
+# Point IDENTIFIABILITY_REPO at a checkout, or clone it beside this one.
+_here = os.path.dirname(os.path.abspath(__file__))
+_candidates = [
+    os.environ.get("IDENTIFIABILITY_REPO"),
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(_here))), "identifiability"),
+]
+PROBE = next((c for c in _candidates if c and os.path.isdir(os.path.join(c, "results"))), None)
+if PROBE is None:
+    raise SystemExit(
+        "Cannot find the identifiability study.\n"
+        "  git clone https://github.com/LTTakahashi/identifiability.git\n"
+        "  export IDENTIFIABILITY_REPO=/path/to/identifiability\n"
+        "Then re-run this script."
+    )
 sys.path.insert(0, PROBE)
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs")
 os.makedirs(OUT, exist_ok=True)

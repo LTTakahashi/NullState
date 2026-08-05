@@ -14,15 +14,15 @@ layers toward shared "default" states, or fail in **lineage-specific** ways.
 > **1. The biology (this README).** The organoid off-target question, the HNOCA
 > compute pilot, and the manuscript in [`docs/manuscript/`](docs/manuscript/).
 >
-> **2. Identifiability and evaluation methodology**
-> ([`identifiability/`](identifiability/README.md)). Attempting Aim 2 raised a question the
+> **2. Identifiability and evaluation methodology** — now its own
+> repository: <https://github.com/LTTakahashi/identifiability>. Attempting Aim 2 raised a question the
 > biology could not settle: *what can a latent-recovery metric actually detect?*
 > That became a self-contained, synthetic, CPU-only study with its own paper in
 > [`docs/tmlr/`](docs/tmlr/) — the finding being that every recovery estimand has
 > an invariance class, and a result is an artifact whenever the failure mode under
 > test lies inside it. It needs no data download and is the fastest thing here to
 > verify: three commands, about five minutes. Start at
-> [`identifiability/REPRODUCE.md`](identifiability/REPRODUCE.md).
+> <https://github.com/LTTakahashi/identifiability>.
 >
 > The two strands share a repository because the second grew out of the first, and
 > because the first strand's early analysis is the worked example the second
@@ -103,7 +103,6 @@ NullState/
 ├── models/            Trained scVI/scANVI weights (gitignored)
 ├── reports/           Pilot report (PDF + LaTeX), figures, run artifacts
 ├── scripts/           Pipeline & data-retrieval scripts
-├── identifiability/        Identifiability & metric-invariance study (synthetic, standalone)
 ├── src/               Core package
 │   ├── data/          Reference construction, retrieval, schema discovery
 │   ├── mapping/       scVI/scANVI training, scoring, classification
@@ -127,17 +126,14 @@ See [`data/README.md`](data/README.md) for download instructions.
 | Pilot report (gates, figures, limitations) | [`reports/nullstate_pilot_report.pdf`](reports/nullstate_pilot_report.pdf) |
 | Biology manuscript | [`docs/manuscript/`](docs/manuscript/) |
 | Identifiability paper (anonymized build) | [`docs/tmlr/`](docs/tmlr/) |
-| Identifiability code, results and reproduction guide | [`identifiability/`](identifiability/README.md) |
+| Identifiability code, results and reproduction guide | [separate repository](https://github.com/LTTakahashi/identifiability) |
 
 ## Reproducibility
 
-The `identifiability/` study is fully reproducible from this repository: it is
-synthetic, CPU-only, and every headline result table is committed, so each
-analysis and figure regenerates in seconds without repeating the sweeps that
-produced it. Its pipeline is **gated** — three verification scripts print
-per-check PASS/FAIL and exit non-zero on failure, and no downstream stage was run
-until the stage below it passed. See
-[`identifiability/REPRODUCE.md`](identifiability/REPRODUCE.md) for a claim-to-script map.
+The identifiability study now lives in its own repository, <https://github.com/LTTakahashi/identifiability>. It is
+synthetic and CPU-only, every headline result table is committed, and its pipeline
+is **gated** — three verification scripts print per-check PASS/FAIL and exit
+non-zero on failure. See its `REPRODUCE.md` for a claim-to-script map.
 
 The biology pipeline requires the source atlases; see
 [`data/README.md`](data/README.md) for download instructions.
