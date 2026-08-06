@@ -71,8 +71,8 @@ an instrument: pairwise distances clear a matched-$N$ noise floor ($14$--$105\ti
 however, finds the per-lineage source offsets are not constant (mutual cosine $0.15$), so the individual
 distances are confounded rather than clean lineage metrics, a validated ordering, not yet a clean
 geometry. NullState thus provides a reference-anchored, \emph{comparative} off-target measurement, to be
-read against the reference's own domain, not as an absolute fidelity score, and an identifiability
-boundary for when latent calibration without anchoring is attainable at all.
+read against the reference's own domain, not as an absolute fidelity score, together with a delineation
+of which \emph{objectives} can calibrate a latent without anchoring in this regime, and which cannot.
 \end{abstract}
 
 \vspace{0.5em}
@@ -244,19 +244,30 @@ undo what the encoder has already written into \zlin{} (Fig.~\ref{fig:aim2}c). T
 interpretation follow, and we are explicit about them. First, the adversary establishes only that this
 difference is decodable, not what it is made of: organoid and primary datasets differ in biological
 in-vitro state \emph{and} in laboratory, dissociation, platform, and ambient-RNA profile, every one of
-which is transcriptome-pervasive and would on its own render source decodable. The experiment therefore
+which is transcriptome-pervasive and would on its own render source decodable. This is not merely a
+cautious reading. In a controlled setting where a removable batch offset and a genuine support mismatch
+are separable by construction, a source-detecting adversary scores $\approx\!1.0$ in \emph{both} cases,
+including one in which the two domains share their biology completely and the offset is fully removed by
+an affine map \citep{nullstate2026identifiability}. A high adversary score therefore cannot, on its own,
+distinguish the harmless case from the fatal one, and we do not ask it to. The experiment therefore
 supports a claim we can fully defend, shared-latent contrastive methods cannot produce a
 source-invariant lineage axis in this regime, whereas the specifically \emph{in-vitro} character of the
 dominant axis is established not by the adversary but by the stress diagnostics of the previous section
 (Fig.~\ref{fig:diag}). Second, the donor-keyed integration used for mapping does not correct the far
 deeper organoid-versus-primary divide, so that divide is precisely what the background latent inherits.
 We accordingly state the negative result methodologically and read its biology from Aim~2's signatures.
-The substantive claim is therefore not that a domain gap exists, that is assumed, but a sharper,
-identifiability-flavoured one: shared-latent calibration \emph{without anchoring} is feasible only where
-the two domains share an overlap region in which a common lineage axis is even defined, and the
-fetal-versus-organoid regime lies past that boundary. Naming this boundary condition, rather than
-restating the bare fact that source is decodable, is the contribution, and it identifies encoder-side
-or distributional methods as the only routes that could cross it.
+The substantive claim is therefore not that a domain gap exists, that is assumed, but a sharper one about
+\emph{which} obstruction is operating. A companion controlled study \citep{nullstate2026identifiability}
+separates the candidates. There, a faithful per-sample encoder recovers the shared factor equally well at
+every level of support overlap, so non-overlap does not by itself make a common axis unrecoverable; what
+overlap does bound is the \emph{removal} of source identity, and that bound is close to an identity of the
+measurement rather than a discovery. Recovery collapses with falling overlap specifically under objectives
+that align the two domains' latent distributions, which is the family the shared-latent construction
+belongs to. Read through that lens, the failure here is an obstruction of the \emph{objective} and not of
+the data: a background encoder that observes source writes it into \zlin{}, and no decoder-side
+conditioning removes it. That is a narrower claim than a boundary on what is knowable, and it is the one
+our evidence supports; it also identifies encoder-side and anchor-based methods, rather than more
+capacity, as the routes that could cross it.
 
 \subsection{Off-target populations occupy distinct, biologically coherent geometry}
 Having quantified the largely neural off-manifold compartment in Aim~2, we turn to the part of the
@@ -377,8 +388,8 @@ removed: a checkable condition, not a free lunch. A cross-germ-layer convergence
 through the cancellation logic and an offset-constancy check, not through repairing contrastive
 disentanglement; the negative result is not a detour away from that goal but the identification of which
 road does not reach it, together with a partly working vehicle, and a clear specification of the
-remaining repair, for the road that does. Framed as a statement about what is
-recoverable from which data, an identifiability boundary for calibration without anchoring, the
+remaining repair, for the road that does. Framed as a statement about which
+\emph{objectives} can calibrate without anchoring, rather than about what is knowable in principle, the
 characterized negative is a methods contribution in its own right.
 
 % =====================================================================
